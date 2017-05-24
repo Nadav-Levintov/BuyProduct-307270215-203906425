@@ -15,6 +15,7 @@
       <module name="base" target="1.5" />
       <module name="buy-app" target="1.8" />
       <module name="buy-test" target="1.8" />
+      <module name="BuyProduct-307270215-203906425" target="1.5" />
       <module name="library" target="1.8" />
     </bytecodeTargetLevel>
   </component>
