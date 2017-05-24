@@ -27,5 +27,17 @@
       <artifactId>buy-external</artifactId>
       <version>1.0</version>
     </dependency>
+      <dependency>
+          <groupId>il.ac.technion.cs.sd</groupId>
+          <artifactId>library</artifactId>
+          <version>1.0</version>
+          <scope>test</scope>
+      </dependency>
+    <dependency>
+      <groupId>il.ac.technion.cs.sd</groupId>
+      <artifactId>base</artifactId>
+      <version>1.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

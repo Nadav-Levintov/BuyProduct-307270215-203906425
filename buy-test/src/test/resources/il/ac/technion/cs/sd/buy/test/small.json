@@ -5,5 +5,11 @@
   {"type": "order", "order-id": "1", "user-id": "1", "product-id": "mac", "amount": 2},
   {"type": "order", "order-id": "2", "user-id": "1", "product-id": "windows", "amount": 5},
   {"type": "order", "order-id": "3", "user-id": "1", "product-id": "linux", "amount": 100},
-  {"type": "product", "id": "linux", "price": 1}
+  {"type": "product", "id": "linux", "price": 1},
+  {"type": "product", "id": "foo1234", "price": 1},
+  {"type": "order", "order-id": "foo1234", "user-id": "foo1234", "product-id": "foo1234", "amount": 10},
+  {"type": "modify-order", "order-id": "foo1234", "amount": 10},
+  {"type": "cancel-order", "order-id": "foo1234"},
+  {"type": "cancel-order", "order-id": "noOrder"},
+  {"type": "modify-order", "order-id": "noOrder2"}
 ]

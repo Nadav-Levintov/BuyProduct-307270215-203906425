@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
  * Created by benny on 24/05/2017.
  */
 public class BuyProductInitializerImp implements BuyProductInitializer {
-   private DataBaseFactory dataBaseFactory;
+    protected DataBaseFactory dataBaseFactory;
 
    @Inject
     public BuyProductInitializerImp(DataBaseFactory dataBaseFactory) {
@@ -24,11 +24,9 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         this.dataBaseFactory = dataBaseFactory;
     }
 
-
-
-    //TODO catch JSONException inside the function
     @Override
-    public CompletableFuture<Void> setupJson(String jsonData) throws JSONException {
+    public CompletableFuture<Void> setupJson(String jsonData) {
+
         CompletableFuture<DataBase> orders;
         CompletableFuture<DataBase> products;
         CompletableFuture<DataBase> modifed_orders;
@@ -59,7 +57,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         names_of_columns3.add("order");
         names_of_columns3.add("number");
         names_of_columns3.add("amount");
-        products = dataBaseFactory.setNames_of_columns(names_of_columns3)
+        modifed_orders = dataBaseFactory.setNames_of_columns(names_of_columns3)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Modified")
                 .build();
@@ -67,13 +65,20 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         num_of_keys = 1;
         List<String> names_of_columns4 = new ArrayList<>();
         names_of_columns4.add("order");
-        products = dataBaseFactory.setNames_of_columns(names_of_columns4)
+        canceld_orders = dataBaseFactory.setNames_of_columns(names_of_columns4)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Canceled")
                 .build();
 
-/////////////////////////////////////
-        Map<String,NullType> OrderIDs = new TreeMap<>();
+
+
+        Map<String,Integer> OrderIDs = new TreeMap<>();
+        String csvOrders = new String();
+        String csvProducts = new String();
+        String csvModified = new String();
+        String csvCanceled = new String();
+
+
         try {
             JSONArray arr = new JSONArray(jsonData);
             for (int i = 0; i < arr.length(); i++) {
@@ -81,31 +86,39 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
 
                 switch (type){
                     case "order":
-                        System.out.println(type + ":");
-                        System.out.println("    " + "order-id: " + arr.getJSONObject(i).getString("order-id"));
-                        System.out.println("    " + "product-id: " + arr.getJSONObject(i).getString("product-id"));
-                        System.out.println("    " +"amount: "+ arr.getJSONObject(i).getInt("amount"));*/
-                       OrderIDs
+                        csvOrders += arr.getJSONObject(i).getString("order-id") + "," +
+                                arr.getJSONObject(i).getString("user-id") + "," +
+                                arr.getJSONObject(i).getString("product-id") + "," +
+                                arr.getJSONObject(i).getInt("amount") + "\n";
+                        OrderIDs.put(arr.getJSONObject(i).getString("order-id"),1); //In order to discard canceled/modified orders that does not exist
                         break;
                     case "product":
-                        System.out.println(type + ":");
-                        System.out.println("    " +"price: "+arr.getJSONObject(i).getInt("price"));
-                        break;
+                        csvProducts += arr.getJSONObject(i).getString("id") + "," +
+                                arr.getJSONObject(i).getInt("price") + "\n";
+                       break;
                     case "modify-order":
-                        System.out.println(type + ":");
-                        System.out.println("    " + "order-id: " + arr.getJSONObject(i).getString("order-id"));
-                        System.out.println("    " +"amount: "+ arr.getJSONObject(i).getInt("amount"));
-                        break;
+                      if(OrderIDs.containsKey(arr.getJSONObject(i).getString("order-id")))
+                         {
+                             csvModified += arr.getJSONObject(i).getString("order-id") + "," +
+                                arr.getJSONObject(i).getInt("amount") + "\n";
+                         }
+                      break;
                     case "cancel-order":
-                        System.out.println(type + ":");
-                        System.out.println("    " + "order-id: " + arr.getJSONObject(i).getString("order-id"));
-                        break;
+                      if(OrderIDs.containsKey(arr.getJSONObject(i).getString("order-id")))
+                        {
+                            csvCanceled += arr.getJSONObject(i).getString("order-id") + "\n";
+                        }
 
-
+                      break;
                     default:
                         System.out.println("JSON file is not good");
                 }
             }
+            System.out.println(csvOrders + "\n");
+            System.out.println(csvProducts + "\n");
+            System.out.println(csvModified + "\n");
+            System.out.println(csvCanceled + "\n");
+
         }catch(JSONException e){
             System.out.println("not good");
         }
