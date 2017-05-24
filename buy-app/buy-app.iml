@@ -11,6 +11,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Arquillian JUnit:Release" level="project" />
     <orderEntry type="module" module-name="library" />
     <orderEntry type="library" name="Maven: il.ac.technion.cs.sd:buy-external:1.0" level="project" />
     <orderEntry type="library" name="Maven: org.json:org.json:chargebee-1.0" level="project" />
@@ -27,6 +28,5 @@
     <orderEntry type="library" name="Maven: com.google.guava:guava:19.0" level="project" />
     <orderEntry type="library" name="Maven: io.reactivex.rxjava2:rxjava:2.1.0" level="project" />
     <orderEntry type="library" name="Maven: org.reactivestreams:reactive-streams:1.0.0" level="project" />
-    <orderEntry type="library" name="Arquillian JUnit:Release" level="project" />
   </component>
 </module>
