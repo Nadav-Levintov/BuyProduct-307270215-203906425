@@ -13,7 +13,7 @@ import java.util.concurrent.ExecutionException;
 
 public class DataBaseImpl implements DataBase {
 
-
+    private final String db_name;
     private final Integer num_of_columns;
     private final Integer num_of_keys;
     private final List<String> names_of_columns;
@@ -27,6 +27,7 @@ public class DataBaseImpl implements DataBase {
     {
 
         String fileName = new String();
+        fileName+=db_name+"_";
         fileName+=keyList.get(premutationIndexList.get(0));
         for (int index=1; index <keyList.size(); index++)
         {
@@ -54,7 +55,9 @@ public class DataBaseImpl implements DataBase {
     }
 
     private String createFileName() {
-        String fileName = new String(names_of_columns.get(0));
+        String fileName = new String();
+        fileName+=db_name+"_";
+        fileName+=names_of_columns.get(0);
         for(int i = 1; i< (this.getNum_of_keys()); i++)
         {
             fileName += "_" + names_of_columns.get(i);
@@ -175,7 +178,8 @@ public class DataBaseImpl implements DataBase {
         }
 
         String fileName = new String();
-        fileName = keysNameforFile.get(0);
+        fileName+=db_name+"_";
+        fileName += keysNameforFile.get(0);
         for(int i = 1; i< (keysNameforFile.size()); i++)
         {
             fileName += "_" + keysNameforFile.get(i);
@@ -209,7 +213,8 @@ public class DataBaseImpl implements DataBase {
 
     //Public Functions
 
-    public DataBaseImpl(Integer num_of_keys, List<String> names_of_columns, FutureLineStorageFactory futureLineStorageFactory) {
+    public DataBaseImpl(String db_name, Integer num_of_keys, List<String> names_of_columns, FutureLineStorageFactory futureLineStorageFactory) {
+        this.db_name = db_name;
         this.num_of_keys=num_of_keys;
         this.names_of_columns = names_of_columns;
         this.num_of_columns=names_of_columns.size();
@@ -384,4 +389,7 @@ public class DataBaseImpl implements DataBase {
         return CompletableFuture.completedFuture(results);
     }
 
+    public String getDb_name() {
+        return db_name;
+    }
 }

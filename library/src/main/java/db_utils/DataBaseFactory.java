@@ -8,11 +8,13 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface DataBaseFactory {
 
-    public CompletableFuture<DataBaseFactory> setNum_of_keys(Integer num_of_keys);
+    public DataBaseFactory setNum_of_keys(Integer num_of_keys);
 
-    public CompletableFuture<DataBaseFactory> setNames_of_columns(List<String> names_of_columns);
+    public DataBaseFactory setNames_of_columns(List<String> names_of_columns);
 
     public CompletableFuture<DataBase> build();
+
+    public DataBaseFactory setDb_name(String db_name);
 }
 
 
