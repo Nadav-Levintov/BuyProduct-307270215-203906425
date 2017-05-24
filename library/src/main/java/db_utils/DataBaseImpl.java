@@ -2,10 +2,13 @@ package db_utils;
 
 
 
-import il.ac.technion.cs.sd.book.ext.LineStorage;
-import il.ac.technion.cs.sd.book.ext.LineStorageFactory;
+
+import il.ac.technion.cs.sd.buy.ext.FutureLineStorageFactory;
+import il.ac.technion.cs.sd.buy.ext.FutureLineStorage;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 
 public class DataBaseImpl implements DataBase {
@@ -14,7 +17,7 @@ public class DataBaseImpl implements DataBase {
     private final Integer num_of_columns;
     private final Integer num_of_keys;
     private final List<String> names_of_columns;
-    private final LineStorageFactory lineStorageFactory;
+    private final FutureLineStorageFactory futureLineStorageFactory;
 
 
     //Private Functions
@@ -35,11 +38,18 @@ public class DataBaseImpl implements DataBase {
     private void write_map_to_new_file(Map<String,String> map, String fileName)
     {
 
-        LineStorage lineStorage = lineStorageFactory.open(fileName);
+        CompletableFuture<FutureLineStorage> lineStorage = futureLineStorageFactory.open(fileName);
+
         for(Map.Entry<String,String> entry : map.entrySet()) {
             String output = entry.getKey() + entry.getValue();
 
-            lineStorage.appendLine(output);
+            try {
+                lineStorage.thenApply(storage -> storage.appendLine(output)).get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                throw new RuntimeException();
+            }
         }
     }
 
@@ -63,7 +73,7 @@ public class DataBaseImpl implements DataBase {
         return true;
     }
 
-    private Integer find_index_in_file(String key, Integer keys_amount, LineStorage lineStorage) {
+    private Integer find_index_in_file(String key, Integer keys_amount, FutureLineStorage lineStorage) {
 
         Integer low=0;
         Integer high;
@@ -71,17 +81,22 @@ public class DataBaseImpl implements DataBase {
         String curr_line;
         try
         {
-            numberOfLines = lineStorage.numberOfLines();
+            numberOfLines = lineStorage.numberOfLines().get();
         } catch (InterruptedException e) {
             throw new RuntimeException();
+        } catch (ExecutionException e) {
+            throw new RuntimeException();
         }
+
         high = numberOfLines -1;
         while (low <= high)
         {
             Integer mid = low + (high - low) / 2;
             try {
-                curr_line = lineStorage.read(mid);
+                curr_line = lineStorage.read(mid).get();
             } catch (InterruptedException e) {
+                throw new RuntimeException();
+            } catch (ExecutionException e) {
                 throw new RuntimeException();
             }
             String[] values = curr_line.split(",");
@@ -168,15 +183,17 @@ public class DataBaseImpl implements DataBase {
         return fileName;
     }
 
-    private Integer get_first_line_with_key(List<String> keysList, LineStorage lineStorage, String key, Integer index) {
+    private Integer get_first_line_with_key(List<String> keysList, FutureLineStorage lineStorage, String key, Integer index) {
         String curr_line;
         Integer compare;
         if(index>0) {
             do {
                 index--;
                 try {
-                    curr_line = lineStorage.read(index);
+                    curr_line = lineStorage.read(index).get();
                 } catch (InterruptedException e) {
+                    throw new RuntimeException();
+                } catch (ExecutionException e) {
                     throw new RuntimeException();
                 }
                 String curr_key = new String();
@@ -192,14 +209,14 @@ public class DataBaseImpl implements DataBase {
 
     //Public Functions
 
-    public DataBaseImpl(Integer num_of_keys, List<String> names_of_columns, LineStorageFactory lineStorageFactory) {
+    public DataBaseImpl(Integer num_of_keys, List<String> names_of_columns, FutureLineStorageFactory futureLineStorageFactory) {
         this.num_of_keys=num_of_keys;
         this.names_of_columns = names_of_columns;
         this.num_of_columns=names_of_columns.size();
-        this.lineStorageFactory = lineStorageFactory;
+        this.futureLineStorageFactory = futureLineStorageFactory;
     }
 
-    public void build_db(String csv_data){
+    public CompletableFuture<Void> build_db(String csv_data){
 
         List<String> keyList = new ArrayList<>();
         ArrayList<Integer> keyIndexList = new ArrayList<>();
@@ -218,41 +235,56 @@ public class DataBaseImpl implements DataBase {
             String fileName = new String(createFileNameFromPermutation(keyList ,currentIndexKeyList));
             write_map_to_new_file(create_file_sorted_by_keys(csv_data, keyList, currentIndexKeyList), fileName);
         }
+
+        return CompletableFuture.completedFuture(null);
     }
 
-    public Optional<String> get_val_from_column_by_name(List<String> keys, String column) {
+    public CompletableFuture<Optional<String>> get_val_from_column_by_name(List<String> keys, String column) {
+        String fileName = createFileName();
+        CompletableFuture<FutureLineStorage> lineStorage = futureLineStorageFactory.open(fileName);
 
         if(names_of_columns.indexOf(column) <0)
         {
-            return Optional.empty();
+            return CompletableFuture.completedFuture(Optional.empty());
         }
-        String fileName = createFileName();
-        LineStorage lineStorage = lineStorageFactory.open(fileName);
 
         String key=new String();
         for (String str: keys)
         {
             key+=str+",";
         }
-        Integer rowNumber = find_index_in_file(key, this.getNum_of_keys(), lineStorage);
+        FutureLineStorage curr_lineStorage = null;
+        try {
+            curr_lineStorage = lineStorage.get();
+        } catch (InterruptedException e) {
+
+        } catch (ExecutionException e) {
+            throw new RuntimeException();
+        }
+        Integer rowNumber = null;
+
+        rowNumber = find_index_in_file(key, this.getNum_of_keys(), curr_lineStorage);
+
         if(rowNumber>=0)
         {
             String curr_line = new String();
             try {
-                curr_line = lineStorage.read(rowNumber);
+                curr_line = curr_lineStorage.read(rowNumber).get();
             } catch (InterruptedException e) {
+                throw new RuntimeException();
+            } catch (ExecutionException e) {
                 throw new RuntimeException();
             }
             String[] values = curr_line.split(",");
-            return Optional.of(values[names_of_columns.indexOf(column)]);
+            return CompletableFuture.completedFuture(Optional.of(values[names_of_columns.indexOf(column)]));
         }
-        return Optional.empty();
+        return CompletableFuture.completedFuture(Optional.empty());
     }
 
-    public Optional<String> get_val_from_column_by_column_number(List<String> keys, Integer column) {
+    public CompletableFuture<Optional<String>> get_val_from_column_by_column_number(List<String> keys, Integer column) {
         if (column< 0  || column >= num_of_columns)
         {
-            return Optional.empty();
+            return CompletableFuture.completedFuture(Optional.empty());
         }
         return get_val_from_column_by_name(keys,names_of_columns.get(column));
     }
@@ -280,7 +312,7 @@ public class DataBaseImpl implements DataBase {
 
     }
 
-    public List<String> get_lines_for_keys(List<String> keysNameList,List<String> keysList) {
+    public CompletableFuture<List<String>> get_lines_for_keys(List<String> keysNameList, List<String> keysList) {
 
         get_lines_for_key_parameter_check(keysNameList, keysList);
 
@@ -288,16 +320,27 @@ public class DataBaseImpl implements DataBase {
 
         //here file name is legal
 
-        LineStorage lineStorage = lineStorageFactory.open(fileName);
+        CompletableFuture<FutureLineStorage> futureLineStorage = futureLineStorageFactory.open(fileName);
 
         List<String> results = new ArrayList<>();
 
         String curr_line;
         Integer compare;
         Integer numberOfLines;
+        FutureLineStorage lineStorage = null;
         try {
-            numberOfLines = lineStorage.numberOfLines();
+            lineStorage = futureLineStorage.get();
         } catch (InterruptedException e) {
+            throw new RuntimeException();
+        } catch (ExecutionException e) {
+            throw new RuntimeException();
+        }
+
+        try {
+            numberOfLines = lineStorage.numberOfLines().get();
+        } catch (InterruptedException e) {
+            throw new RuntimeException();
+        } catch (ExecutionException e) {
             throw new RuntimeException();
         }
 
@@ -312,7 +355,7 @@ public class DataBaseImpl implements DataBase {
 
         if(index<0) //case key not found
         {
-            return results;
+            return CompletableFuture.completedFuture(results);
         }
 
         //here find the first line in file with the right key
@@ -321,8 +364,10 @@ public class DataBaseImpl implements DataBase {
         //here it copies all the rows with the right key from the first
         do {
             try {
-                curr_line = lineStorage.read(index);
+                curr_line = lineStorage.read(index).get();
             } catch (InterruptedException e) {
+                throw new RuntimeException();
+            } catch (ExecutionException e) {
                 throw new RuntimeException();
             }
             String[] values = curr_line.split(",");
@@ -336,7 +381,7 @@ public class DataBaseImpl implements DataBase {
         }
         while(compare == 0 && index < numberOfLines);
 
-        return results;
+        return CompletableFuture.completedFuture(results);
     }
 
 }
