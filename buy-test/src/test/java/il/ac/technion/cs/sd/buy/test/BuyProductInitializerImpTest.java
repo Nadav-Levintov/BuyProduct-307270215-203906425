@@ -14,7 +14,7 @@ public class BuyProductInitializerImpTest {
 
     @Test
     public void setupJson() throws Exception {
-        BuyProductInitializerImp testClass = new BuyProductInitializerImp();
+        BuyProductInitializerImp testClass = new BuyProductInitializerImp(orders, products, modifed_orders, canceld_orders);
         String fileContents =
                 new Scanner(new File(BuyProductInitializerImpTest.class.getResource("small.json").getFile())).useDelimiter("\\Z").next();
         testClass.setupJson(fileContents);
