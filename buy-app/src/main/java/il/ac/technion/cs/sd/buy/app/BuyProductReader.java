@@ -12,9 +12,9 @@ import java.util.concurrent.ExecutionException;
 /** This class will only be instantiated by Guice after one of the setup methods has been called. */
 public interface BuyProductReader {
   /** Returns true iff the given ID is that of a valid (possibly canceled) order. */
-  CompletableFuture<Boolean> isValidOrderId(String orderId) throws ExecutionException, InterruptedException;
+  CompletableFuture<Boolean> isValidOrderId(String orderId);
   /** Return true iff the given ID is that of a valid and canceled order. */
-  CompletableFuture<Boolean> isCanceledOrder(String orderId) throws ExecutionException, InterruptedException;
+  CompletableFuture<Boolean> isCanceledOrder(String orderId);
   /** Return true iff the given ID is that of a valid that was modified. */
   CompletableFuture<Boolean> isModifiedOrder(String orderId);
 

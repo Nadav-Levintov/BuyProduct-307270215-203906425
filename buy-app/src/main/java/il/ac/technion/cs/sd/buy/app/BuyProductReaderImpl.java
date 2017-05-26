@@ -7,16 +7,17 @@ import db_utils.DataBaseFactory;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 /**
  * Created by Nadav on 24-May-17.
  */
 public class BuyProductReaderImpl implements BuyProductReader {
 
-    private CompletableFuture<DataBase> ordersDB;
-    private CompletableFuture<DataBase> productsDB;
-    private CompletableFuture<DataBase> modified_ordersDB;
-    private CompletableFuture<DataBase> canceled_ordersDB;
+    private final CompletableFuture<DataBase> ordersDB;
+    private final CompletableFuture<DataBase> productsDB;
+    private final CompletableFuture<DataBase> modified_ordersDB;
+    private final CompletableFuture<DataBase> canceled_ordersDB;
 
     @Inject
     public BuyProductReaderImpl(CompletableFuture<DataBaseFactory> dataBaseFactoryCompletableFuture) {
@@ -28,6 +29,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         names_of_columns_OrdersDB.add("order");
         names_of_columns_OrdersDB.add("user");
         names_of_columns_OrdersDB.add("product");
+        names_of_columns_OrdersDB.add("amount");
 
         this.ordersDB = dataBaseFactoryCompletableFuture
                 .thenApply(dbf-> dbf.setDb_name("Orders"))
@@ -120,37 +122,205 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(orderId);
 
-
-        CompletableFuture<List<String>> line_list = canceled_ordersDB.thenCompose(orders -> orders
+        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
                 .get_lines_for_keys(names_of_keys,keys));
-        CompletableFuture<Boolean> res = line_list.thenApply(lines -> lines.isEmpty());
 
-        return res.thenApply(r -> !r);
+        CompletableFuture<List<String>> mod_line_list = modified_ordersDB.thenCompose(orders -> orders
+                .get_lines_for_keys(names_of_keys,keys));
+
+        CompletableFuture<Integer> res;
+        CompletableFuture<String> line;
+
+        //TODO: can we use compose to eliminate the "get()"?
+
+
+        try {
+            if(isValidOrderId(orderId).get())
+            {
+                if(isModifiedOrder(orderId).get())
+                {
+                    line = mod_line_list.thenApply(lines -> lines.get(lines.size()-1));
+                    res = line.thenApply(l -> Integer.parseInt(l.split(",")[1]));
+                }
+                else
+                {
+                    line = order_line_list.thenApply(lines -> lines.get(lines.size()-1));
+                    res = line.thenApply(l -> Integer.parseInt(l.split(",")[2]));
+                }
+
+                if(isCanceledOrder(orderId).get())
+                {
+                    res = res.thenApply(r -> r*(-1));
+                }
+
+                return res.thenApply(r -> OptionalInt.of(r));
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException();
+        } catch (ExecutionException e) {
+            throw new RuntimeException();
+        }
+
+
+        return CompletableFuture.completedFuture(OptionalInt.empty());
     }
 
     @Override
     public CompletableFuture<List<Integer>> getHistoryOfOrder(String orderId) {
-        return null;
+        CompletableFuture<List<Integer>> res_list = CompletableFuture.completedFuture(new ArrayList<>());
+
+        List<String> names_of_keys = new ArrayList<>();
+        names_of_keys.add("order");
+        List<String> keys = new ArrayList<>();
+        keys.add(orderId);
+
+        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
+                .get_lines_for_keys(names_of_keys,keys));
+
+        CompletableFuture<List<String>> canceld_line_list = canceled_ordersDB.thenCompose(orders -> orders
+                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<Boolean> is_order_canceld = canceld_line_list.thenApply(lines -> lines.isEmpty());
+
+        CompletableFuture<List<String>> mod_line_list = modified_ordersDB.thenCompose(orders -> orders
+                .get_lines_for_keys(names_of_keys,keys));
+
+
+        try {
+                order_line_list.thenApply(lines -> lines
+                        .stream()
+                        .map(line -> res_list
+                                .thenApply(list -> list
+                                        .add(Integer.parseInt(line.split(",")[2])))));
+
+                mod_line_list.thenApply(lines -> lines
+                        .stream()
+                        .map(line -> res_list
+                                .thenApply(list -> list
+                                        .add(Integer.parseInt(line.split(",")[1])))));
+
+
+                if(is_order_canceld.get())
+                {
+                    res_list.thenApply(list -> list.add(-1));
+                }
+        } catch (InterruptedException e) {
+            throw new RuntimeException();
+        } catch (ExecutionException e) {
+            throw new RuntimeException();
+        }
+        return res_list;
     }
 
     @Override
     public CompletableFuture<List<String>> getOrderIdsForUser(String userId) {
-        return null;
+        CompletableFuture<List<String>> res_list = CompletableFuture.completedFuture(new ArrayList<>());
+
+        List<String> names_of_keys = new ArrayList<>();
+        names_of_keys.add("user");
+        List<String> keys = new ArrayList<>();
+        keys.add(userId);
+
+        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
+                .get_lines_for_keys(names_of_keys,keys));
+
+        res_list = order_line_list.thenApply(lines -> lines
+                .stream()
+                .map(line -> line.split(",")[0])
+                .sorted()
+                .collect(Collectors.toList()));
+        return res_list;
     }
 
     @Override
     public CompletableFuture<Long> getTotalAmountSpentByUser(String userId) {
-        return null;
+
+        CompletableFuture<Long> res = CompletableFuture.completedFuture(new Long(0));
+
+        CompletableFuture<List<String>> orderIds =  getOrderIdsForUser(userId);
+
+        //TODO: need to under how to work with CompletableFuture<List<String>>
+
+    return res;
     }
 
     @Override
     public CompletableFuture<List<String>> getUsersThatPurchased(String productId) {
-        return null;
+        CompletableFuture<List<String>> res_list = CompletableFuture.completedFuture(new ArrayList<>());
+        CompletableFuture<List<String>> order_id_list = CompletableFuture.completedFuture(new ArrayList<>());
+
+        List<String> names_of_keys = new ArrayList<>();
+        names_of_keys.add("product");
+        List<String> keys = new ArrayList<>();
+        keys.add(productId);
+
+        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
+                .get_lines_for_keys(names_of_keys,keys));
+
+        order_id_list = order_line_list.thenApply(lines -> lines
+                .stream()
+                .map(line -> line.split(",")[0])
+                .distinct()
+                .collect(Collectors.toList()));
+
+        List<String> names_of_keys2 = new ArrayList<>();
+        names_of_keys2.add("order");
+
+        res_list = order_line_list.thenApply(lines -> lines
+                .stream()
+                .map(line -> {
+                    String arr[] = line.split(",");
+                    CompletableFuture<List<String>> canceled_lines = canceled_ordersDB.thenCompose(orders -> orders
+                    .get_lines_for_keys(names_of_keys2,Arrays.asList(arr[0])));
+
+                    try {
+                        if(canceled_lines.get().isEmpty())
+                        {
+                            return arr[1];
+                        }
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException();
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException();
+                    }
+                    return new String();
+                })
+                .distinct()
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList()));
+
+        return res_list;
     }
 
     @Override
     public CompletableFuture<List<String>> getOrderIdsThatPurchased(String productId) {
-        return null;
+        CompletableFuture<List<String>> res_list = CompletableFuture.completedFuture(new ArrayList<>());
+        CompletableFuture<List<String>> order_id_list = CompletableFuture.completedFuture(new ArrayList<>());
+
+        List<String> names_of_keys = new ArrayList<>();
+        names_of_keys.add("product");
+        List<String> keys = new ArrayList<>();
+        keys.add(productId);
+
+        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
+                .get_lines_for_keys(names_of_keys,keys));
+
+        order_id_list = order_line_list.thenApply(lines -> lines
+                .stream()
+                .map(line -> line.split(",")[0])
+                .distinct()
+                .collect(Collectors.toList()));
+
+
+        res_list = order_line_list.thenApply(lines -> lines
+                .stream()
+                .map(line -> {
+                    String arr[] = line.split(",");
+                    return arr[0];
+                })
+                .distinct()
+                .collect(Collectors.toList()));
+
+        return res_list;
     }
 
     @Override
