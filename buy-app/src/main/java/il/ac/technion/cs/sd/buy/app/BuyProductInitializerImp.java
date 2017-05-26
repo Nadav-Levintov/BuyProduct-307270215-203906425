@@ -38,6 +38,36 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
     @Override
     public CompletableFuture<Void> setupJson(String jsonData){
 
+        // create the csv string from json string
+        CsvStringsFromJson csvStrings = new CsvStringsFromJson(jsonData).invoke();
+        String csvOrders = csvStrings.getCsvOrders();
+        String csvProducts = csvStrings.getCsvProducts();
+        String csvModified = csvStrings.getCsvModified();
+        String csvCanceled = csvStrings.getCsvCanceled();
+
+        createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified, csvCanceled);
+
+        return new CompletableFuture<>();
+    }
+
+    @Override
+    public CompletableFuture<Void> setupXml(String xmlData) throws ParserConfigurationException, IOException, SAXException {
+
+
+
+        CsvStringsFromXml csvStringsFromXml = new CsvStringsFromXml(xmlData).invoke();
+        String csvOrders = csvStringsFromXml.getCsvOrders();
+        String csvProducts = csvStringsFromXml.getCsvProducts();
+        String csvModified = csvStringsFromXml.getCsvModified();
+        String csvCanceled = csvStringsFromXml.getCsvCanceled();
+        createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified, csvCanceled);
+
+
+        return new CompletableFuture<>();
+    }
+
+    private void createDataBasesFromCsvStrings(String csvOrders, String csvProducts, String csvModified, String csvCanceled) {
+        // build the data bases
         Integer num_of_keys = 3;
 
         List<String> names_of_columns1 = new ArrayList<>();
@@ -76,14 +106,6 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                 .setDb_name("Canceled")
                 .build();
 
-        // create the csv string from json string
-        CsvStrings csvStrings = new CsvStrings(jsonData).invoke();
-        String csvOrders = csvStrings.getCsvOrders();
-        String csvProducts = csvStrings.getCsvProducts();
-        String csvModified = csvStrings.getCsvModified();
-        String csvCanceled = csvStrings.getCsvCanceled();
-
-        // build the data bases
         try {
             ordersDB.get().build_db(csvOrders);
             productsDB.get().build_db(csvProducts);
@@ -96,84 +118,16 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             System.out.println("catch ExecutionException");
             e.printStackTrace();
         }
-
-        return new CompletableFuture<>();
     }
 
-    @Override
-    public CompletableFuture<Void> setupXml(String xmlData) throws ParserConfigurationException, IOException, SAXException {
-
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db=dbf.newDocumentBuilder();
-        InputSource is = new InputSource((new StringReader(xmlData)));
-        Document doc = db.parse(is);
-        doc.getDocumentElement().normalize();
-
-
-        String csvOrders = new String();
-        String csvProducts = new String();
-        String csvModified = new String();
-        String csvCanceled = new String();
-        Map<String,Integer> OrderIDs = new TreeMap<>();
-
-        Node n = doc.getFirstChild();   //The root
-        NodeList nListElements = n.getChildNodes();
-        for (int temp = 0; temp < nListElements.getLength(); temp++)
-        {
-            Node elementNode = nListElements.item(temp);
-            if (elementNode.getNodeType() == Node.ELEMENT_NODE)
-            {
-                Element element = (Element) elementNode;
-                switch (elementNode.getNodeName()){
-                    case "Order":
-                        csvOrders += element.getElementsByTagName("order-id").item(0).getTextContent() + "," +
-                                element.getElementsByTagName("user-id") .item(0).getTextContent() + "," +
-                                element.getElementsByTagName("product-id").item(0).getTextContent() + "," +
-                                element.getElementsByTagName("amount").item(0).getTextContent() + "\n";
-                        OrderIDs.put(element.getElementsByTagName("user-id") .item(0).getTextContent(),1); //In order to discard canceled/modified orders that does not exist
-                        break;
-
-                    case "Product":
-                        csvProducts += element.getElementsByTagName("id").item(0).getTextContent() + "," +
-                                element.getElementsByTagName("price") .item(0).getTextContent()+ "\n";
-                        break;
-
-                    case "ModifyOrder":
-                        if(OrderIDs.containsKey(element.getElementsByTagName("order-id").item(0).getTextContent()))
-                        {
-                            csvModified += element.getElementsByTagName("order-id").item(0).getTextContent() + "," +
-                                    element.getElementsByTagName("new-amount").item(0).getTextContent() + "\n";
-                        }
-                        break;
-
-                    case "CancelOrder":
-                        if(OrderIDs.containsKey(element.getElementsByTagName("order-id").item(0).getTextContent()))
-                        {
-                             csvCanceled += element.getElementsByTagName("order-id").item(0).getTextContent() + "\n";
-                        }
-                        break;
-
-                    default:
-                        System.out.println("XML file is not legal");
-                }
-            }
-        }
-        System.out.println(csvOrders);
-        System.out.println(csvProducts);
-        System.out.println(csvModified);
-        System.out.println(csvCanceled);
-
-        return new CompletableFuture<>();
-    }
-
-    private class CsvStrings {
+    private class CsvStringsFromJson {
         private String jsonData;
         private String csvOrders;
         private String csvProducts;
         private String csvModified;
         private String csvCanceled;
 
-        public CsvStrings(String jsonData) {
+        public CsvStringsFromJson(String jsonData) {
             this.jsonData = jsonData;
         }
 
@@ -193,7 +147,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             return csvCanceled;
         }
 
-        public CsvStrings invoke() {
+        public CsvStringsFromJson invoke() {
             Map<String,Integer> OrderIDs = new TreeMap<>();
             csvOrders = new String();
             csvProducts = new String();
@@ -239,6 +193,92 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
 
             }catch(JSONException e){
                 System.out.println("catch JSONException");
+            }
+            return this;
+        }
+    }
+
+    private class CsvStringsFromXml {
+        private String xmlData;
+        private String csvOrders;
+        private String csvProducts;
+        private String csvModified;
+        private String csvCanceled;
+
+        public CsvStringsFromXml(String xmlData) {
+            this.xmlData = xmlData;
+        }
+
+        public String getCsvOrders() {
+            return csvOrders;
+        }
+
+        public String getCsvProducts() {
+            return csvProducts;
+        }
+
+        public String getCsvModified() {
+            return csvModified;
+        }
+
+        public String getCsvCanceled() {
+            return csvCanceled;
+        }
+
+        public CsvStringsFromXml invoke() throws ParserConfigurationException, SAXException, IOException {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            DocumentBuilder db=dbf.newDocumentBuilder();
+            InputSource is = new InputSource((new StringReader(xmlData)));
+            Document doc = db.parse(is);
+            doc.getDocumentElement().normalize();
+
+            csvOrders = new String();
+            csvProducts = new String();
+            csvModified = new String();
+            csvCanceled = new String();
+            Map<String,Integer> OrderIDs = new TreeMap<>();
+
+            Node n = doc.getFirstChild();   //The root
+            NodeList nListElements = n.getChildNodes();
+            for (int temp = 0; temp < nListElements.getLength(); temp++)
+            {
+                Node elementNode = nListElements.item(temp);
+                if (elementNode.getNodeType() == Node.ELEMENT_NODE)
+                {
+                    Element element = (Element) elementNode;
+                    switch (elementNode.getNodeName()){
+                        case "Order":
+                            csvOrders += element.getElementsByTagName("order-id").item(0).getTextContent() + "," +
+                                    element.getElementsByTagName("user-id") .item(0).getTextContent() + "," +
+                                    element.getElementsByTagName("product-id").item(0).getTextContent() + "," +
+                                    element.getElementsByTagName("amount").item(0).getTextContent() + "\n";
+                            OrderIDs.put(element.getElementsByTagName("user-id") .item(0).getTextContent(),1); //In order to discard canceled/modified orders that does not exist
+                            break;
+
+                        case "Product":
+                            csvProducts += element.getElementsByTagName("id").item(0).getTextContent() + "," +
+                                    element.getElementsByTagName("price") .item(0).getTextContent()+ "\n";
+                            break;
+
+                        case "ModifyOrder":
+                            if(OrderIDs.containsKey(element.getElementsByTagName("order-id").item(0).getTextContent()))
+                            {
+                                csvModified += element.getElementsByTagName("order-id").item(0).getTextContent() + "," +
+                                        element.getElementsByTagName("new-amount").item(0).getTextContent() + "\n";
+                            }
+                            break;
+
+                        case "CancelOrder":
+                            if(OrderIDs.containsKey(element.getElementsByTagName("order-id").item(0).getTextContent()))
+                            {
+                                 csvCanceled += element.getElementsByTagName("order-id").item(0).getTextContent() + "\n";
+                            }
+                            break;
+
+                        default:
+                            System.out.println("XML file is not legal");
+                    }
+                }
             }
             return this;
         }

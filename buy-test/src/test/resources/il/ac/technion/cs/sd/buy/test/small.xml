@@ -20,4 +20,20 @@
     <id>android</id>
     <price>500</price>
   </Product>
+  <CancelOrder>
+    <order-id>2</order-id>
+  </CancelOrder>
+  <ModifyOrder>
+    <order-id>2</order-id>
+    <new-amount>10</new-amount>
+  </ModifyOrder>
+  <Order>
+    <user-id>1</user-id>
+    <order-id>2</order-id>
+    <product-id>android</product-id>
+    <amount>5</amount>
+  </Order>
+
+
+
 </Root>
