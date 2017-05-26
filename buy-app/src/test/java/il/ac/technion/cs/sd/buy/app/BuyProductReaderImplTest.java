@@ -1,32 +1,29 @@
 package il.ac.technion.cs.sd.buy.app;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.Before;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import db_utils.DataBaseFactory;
+import db_utils.DataBaseFactoryImpl;
+import db_utils.DataBaseModule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.*;
 
 /**
- * Created by benny on 26/05/2017.
+ * Created by Nadav on 26-May-17.
  */
-@RunWith(Arquillian.class)
 public class BuyProductReaderImplTest {
-    @Before
-    public void setUp() throws Exception {
-    }
-
-    @After
-    public void tearDown() throws Exception {
-    }
-
     @Test
     public void isValidOrderId() throws Exception {
+        Injector injector= Guice.createInjector(new MockedFutureLineStorageModule(), new DataBaseModule());
+        CompletableFuture<DataBaseFactory> dbf =CompletableFuture.completedFuture(injector.getInstance(DataBaseFactoryImpl.class));
+        BuyProductReader buyProductReader= new BuyProductReaderImpl(dbf);
+        CompletableFuture<Boolean> val1 = buyProductReader.isValidOrderId("1");
+
+        Boolean res = val1.get();
+        assertTrue(res);
     }
 
     @Test
@@ -83,13 +80,6 @@ public class BuyProductReaderImplTest {
 
     @Test
     public void getItemsPurchasedByUsers() throws Exception {
-    }
-
-    @Deployment
-    public static JavaArchive createDeployment() {
-        return ShrinkWrap.create(JavaArchive.class)
-                .addClass(BuyProductReaderImpl.class)
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 
 }

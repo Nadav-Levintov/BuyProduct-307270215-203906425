@@ -12,7 +12,7 @@ public interface DataBase {
 
     CompletableFuture<Optional<String>> get_val_from_column_by_name(List<String> keys, String column);
 
-    CompletableFuture<List<String>> get_lines_for_keys(List<String> keysNameList, List<String> keysIDList);
+    CompletableFuture<List<String>> get_lines_for_keys(List<String> keysNameList, List<String> keysList);
 
     CompletableFuture<Optional<String>> get_val_from_column_by_column_number(List<String> keys, Integer column);
 
@@ -23,4 +23,6 @@ public interface DataBase {
     Integer getNum_of_keys();
 
     OptionalInt get_num_of_column(String col_name);
+
+    String getDb_name();
 }
