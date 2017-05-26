@@ -20,8 +20,6 @@ public class BuyProductInitializerImpTest {
 
         Injector injector= Guice.createInjector(new DataBaseModule(),new MockedFutureLineStorageModule(), new FakeBuyProductModule());
         BuyProductInitializerImp testClass= injector.getInstance(BuyProductInitializerImp.class);
-
-      //  BuyProductInitializerImp testClass = new BuyProductInitializerImp();
         String fileContents =
                 new Scanner(new File(BuyProductInitializerImpTest.class.getResource("small.json").getFile())).useDelimiter("\\Z").next();
         testClass.setupJson(fileContents);

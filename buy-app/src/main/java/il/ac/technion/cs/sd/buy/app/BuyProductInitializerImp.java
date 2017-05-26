@@ -153,7 +153,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             csvProducts = new String();
             csvModified = new String();
             csvCanceled = new String();
-
+            int number =1;
 
             try {
                 JSONArray arr = new JSONArray(jsonData);
@@ -175,8 +175,11 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                         case "modify-order":
                           if(OrderIDs.containsKey(arr.getJSONObject(i).getString("order-id")))
                              {
+
                                  csvModified += arr.getJSONObject(i).getString("order-id") + "," +
-                                    arr.getJSONObject(i).getInt("amount") + "\n";
+                                         number + "," +
+                                         arr.getJSONObject(i).getInt("amount") + "\n";
+                                 number++;
                              }
                           break;
                         case "cancel-order":
@@ -236,6 +239,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             csvProducts = new String();
             csvModified = new String();
             csvCanceled = new String();
+            int number=0;
             Map<String,Integer> OrderIDs = new TreeMap<>();
 
             Node n = doc.getFirstChild();   //The root
@@ -264,7 +268,9 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                             if(OrderIDs.containsKey(element.getElementsByTagName("order-id").item(0).getTextContent()))
                             {
                                 csvModified += element.getElementsByTagName("order-id").item(0).getTextContent() + "," +
+                                        number + "," +
                                         element.getElementsByTagName("new-amount").item(0).getTextContent() + "\n";
+                                number++;
                             }
                             break;
 
