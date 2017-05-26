@@ -12,11 +12,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
 import org.mockito.Mockito;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -25,7 +29,7 @@ public class ExampleTest {
 
   @Rule public Timeout globalTimeout = Timeout.seconds(20);
 
-  private static Injector setupAndGetInjector(String fileName) throws FileNotFoundException, JSONException {
+  private static Injector setupAndGetInjector(String fileName) throws IOException, JSONException, SAXException, ParserConfigurationException, ExecutionException, InterruptedException {
     String fileContents =
         new Scanner(new File(ExampleTest.class.getResource(fileName).getFile())).useDelimiter("\\Z").next();
     Injector injector = Guice.createInjector(new BuyProductModule(), new LineStorageModule());

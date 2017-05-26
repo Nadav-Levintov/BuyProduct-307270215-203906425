@@ -30,6 +30,15 @@ public class BuyProductInitializerImpTest {
 
     @Test
     public void setupXml() throws Exception {
+
+        Injector injector= Guice.createInjector(new DataBaseModule(),new MockedFutureLineStorageModule(), new FakeBuyProductModule());
+        BuyProductInitializerImp testClass= injector.getInstance(BuyProductInitializerImp.class);
+        String fileContents =
+                new Scanner(new File(BuyProductInitializerImpTest.class.getResource("small.xml").getFile())).useDelimiter("\\Z").next();
+        testClass.setupXml(fileContents);
+
+
+
     }
 
 
