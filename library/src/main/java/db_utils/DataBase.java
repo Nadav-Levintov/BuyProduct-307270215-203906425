@@ -25,4 +25,6 @@ public interface DataBase {
     OptionalInt get_num_of_column(String col_name);
 
     String getDb_name();
+
+    Boolean is_multiples_allowed();
 }

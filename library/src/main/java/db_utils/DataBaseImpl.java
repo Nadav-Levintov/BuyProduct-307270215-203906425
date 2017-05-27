@@ -394,4 +394,8 @@ public class DataBaseImpl implements DataBase {
     public String getDb_name() {
         return db_name;
     }
+
+    public Boolean is_multiples_allowed() {
+        return allow_multiples;
+    }
 }
