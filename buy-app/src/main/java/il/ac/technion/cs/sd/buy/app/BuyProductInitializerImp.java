@@ -19,10 +19,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -78,6 +75,8 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         names_of_columns1.add("user");
         names_of_columns1.add("product");
         names_of_columns1.add("amount");
+        names_of_columns1.add("modified");
+        names_of_columns1.add("canceled");
         CompletableFuture<DataBase> ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns1)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Orders")
@@ -206,9 +205,9 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
 
         public CsvStringsFromJson help1() {
             Map<String,String> ordersMap = new TreeMap<>();
-            Map<String,Integer> productsMap = new TreeMap<>();
+            Map<String,String> productsMap = new TreeMap<>();
             ListMultimap<String,String> modifiedOrdersMap = ArrayListMultimap.create();
-            ArrayList<String> canceldOrders = new ArrayList<>();
+            HashSet<String> canceldOrders = new HashSet<>();
 
             try {
                 JSONArray arr = new JSONArray(jsonData);
@@ -217,15 +216,28 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
 
                     switch (type){
                         case "order":
-                            // remove from canceld
-                            // remove from modified
                             // add to map - (will remove old)
+                            String orderId = new String(arr.getJSONObject(i).getString("order-id"));
 
-
+                            csvOrders = arr.getJSONObject(i).getString("order-id") + "," +
+                                    arr.getJSONObject(i).getString("user-id") + "," +
+                                    arr.getJSONObject(i).getString("product-id") + "," +
+                                    arr.getJSONObject(i).getInt("amount") + "\n";
+                            ordersMap.put(orderId,csvOrders);
+                            // remove from canceled
+                            canceldOrders.remove(orderId);
+                            // remove from modified
+                            modifiedOrdersMap.removeAll(orderId);
                             break;
+
                         case "product":
                             // add to map of the products - remove old ones
+                            String productId = new String(arr.getJSONObject(i).getString("id"));
+                            csvProducts = arr.getJSONObject(i).getString("id") + "," +
+                                    arr.getJSONObject(i).getInt("price") + "\n";
+                            productsMap.put(productId, csvProducts);
 
+/////////////////////////////////
 
                             break;
                         case "modify-order":
