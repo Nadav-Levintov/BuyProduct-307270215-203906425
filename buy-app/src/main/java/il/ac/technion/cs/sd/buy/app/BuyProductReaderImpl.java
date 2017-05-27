@@ -273,7 +273,6 @@ public class BuyProductReaderImpl implements BuyProductReader {
                                 Integer.parseInt(price_optional.get()));
 
                 CompletableFuture<Integer> amount = CompletableFuture.completedFuture(Integer.parseInt(order_amount));
-
                 if(!is_canceled)
                 {
                     if(is_modified)
@@ -295,43 +294,8 @@ public class BuyProductReaderImpl implements BuyProductReader {
                     );
         });
 
-  /*      CompletableFuture<List<Integer>> transactions_prices = future_orders_list.thenCompose(orders_list ->
-        {
-            return orders_list.stream()
-                    .map(order_string ->
-                    {
-                        String line_values[] = order_string.split(",");
-
-                        String order_id = line_values[0];
-                        String product_id = line_values[1];
-                        String order_amount = line_values[2];
-                        Boolean is_modified = Boolean.parseBoolean(line_values[3]);
-                        Boolean is_canceled = Boolean.parseBoolean(line_values[4]);
-
-                        CompletableFuture<Integer> price = productsDB.thenCompose(products ->
-                               products.get_val_from_column_by_name(new ArrayList<String>(Arrays.asList(product_id)),"price"))
-                                .thenApply(price_optional ->
-                                Integer.parseInt(price_optional.get()));
-
-                        CompletableFuture<Integer> amount = CompletableFuture.completedFuture(Integer.parseInt(order_amount));
-
-                        if(!is_canceled)
-                        {
-                            if(is_modified)
-                            {
-                                amount= modified_ordersDB.thenCompose(modified_orders ->
-                                modified_orders.get_lines_for_keys(new ArrayList<String>(Arrays.asList("order")),
-                                        new ArrayList<String>(Arrays.asList(order_id)))).thenApply(modified_lines ->
-                                modified_lines.get(modified_lines.size()-1).split(",")[0]).thenApply( amount_str ->
-                                        Integer.parseInt(amount_str));
-                            }
-                        }
-
-                        return price.thenCombine(amount,(price_val, amount_val) -> price_val*amount_val);
-                    }).collect(Collectors.toList());
-        });
-*/
-
+        res =transactions_prices.thenApply(list -> list.stream()
+                .mapToLong(i->i.longValue()).sum());
     return res;
     }
 
