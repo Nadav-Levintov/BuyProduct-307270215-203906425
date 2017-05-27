@@ -92,7 +92,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                 .setDb_name("Products")
                 .setAllow_Multiples(false)
                 .build();
-
+ 
         num_of_keys = 1;
         List<String> names_of_columns3 = new ArrayList<>();
         names_of_columns3.add("order");
