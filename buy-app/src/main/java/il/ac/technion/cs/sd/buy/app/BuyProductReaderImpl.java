@@ -370,7 +370,6 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Override
     public CompletableFuture<List<String>> getOrderIdsThatPurchased(String productId) {
         CompletableFuture<List<String>> res_list = CompletableFuture.completedFuture(new ArrayList<>());
-        CompletableFuture<List<String>> order_id_list = CompletableFuture.completedFuture(new ArrayList<>());
 
         List<String> names_of_keys = new ArrayList<>();
         names_of_keys.add("product");
@@ -380,11 +379,6 @@ public class BuyProductReaderImpl implements BuyProductReader {
         CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
                 .get_lines_for_keys(names_of_keys,keys));
 
-        order_id_list = order_line_list.thenApply(lines -> lines
-                .stream()
-                .map(line -> line.split(",")[0])
-                .distinct()
-                .collect(Collectors.toList()));
 
 
         res_list = order_line_list.thenApply(lines -> lines
