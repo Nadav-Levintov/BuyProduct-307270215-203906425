@@ -74,6 +74,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         names_of_columns1.add("order");
         names_of_columns1.add("user");
         names_of_columns1.add("product");
+        names_of_columns1.add("amount");
         CompletableFuture<DataBase> ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns1)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Orders")
