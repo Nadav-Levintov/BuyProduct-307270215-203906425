@@ -22,7 +22,6 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Inject
     public BuyProductReaderImpl(CompletableFuture<DataBaseFactory> dataBaseFactoryCompletableFuture) {
 
-
         Integer num_of_keys_ordersDB = new Integer(3);
 
         List<String> names_of_columns_OrdersDB = new ArrayList<>();
@@ -30,11 +29,14 @@ public class BuyProductReaderImpl implements BuyProductReader {
         names_of_columns_OrdersDB.add("user");
         names_of_columns_OrdersDB.add("product");
         names_of_columns_OrdersDB.add("amount");
+        names_of_columns_OrdersDB.add("modified");
+        names_of_columns_OrdersDB.add("canceled");
 
         this.ordersDB = dataBaseFactoryCompletableFuture
                 .thenApply(dbf-> dbf.setDb_name("Orders"))
                 .thenApply(dbf -> dbf.setNames_of_columns(names_of_columns_OrdersDB))
                 .thenApply(dbf -> dbf.setNum_of_keys(num_of_keys_ordersDB))
+                .thenApply(dbf -> dbf.setAllow_Multiples(Boolean.FALSE))
                 .thenCompose(dbf -> dbf.build());
 
 
@@ -46,6 +48,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                 .thenApply(dbf-> dbf.setDb_name("Products"))
                 .thenApply(dbf -> dbf.setNames_of_columns(names_of_columns_productsDB))
                 .thenApply(dbf -> dbf.setNum_of_keys(num_of_keys_productsDB))
+                .thenApply(dbf -> dbf.setAllow_Multiples(Boolean.FALSE))
                 .thenCompose(dbf -> dbf.build());
 
         Integer num_of_keys_modified_ordersDB = 2;
@@ -57,6 +60,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                 .thenApply(dbf-> dbf.setDb_name("Modified"))
                 .thenApply(dbf -> dbf.setNames_of_columns(names_of_columns_modified_ordersDB))
                 .thenApply(dbf -> dbf.setNum_of_keys(num_of_keys_modified_ordersDB))
+                .thenApply(dbf -> dbf.setAllow_Multiples(Boolean.TRUE))
                 .thenCompose(dbf -> dbf.build());
 
         Integer num_of_keys_canceled_ordersDB = 1;
@@ -66,6 +70,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                 .thenApply(dbf-> dbf.setDb_name("Canceled"))
                 .thenApply(dbf -> dbf.setNames_of_columns(names_of_columns_canceled_ordersDB))
                 .thenApply(dbf -> dbf.setNum_of_keys(num_of_keys_canceled_ordersDB))
+                .thenApply(dbf -> dbf.setAllow_Multiples(Boolean.FALSE))
                 .thenCompose(dbf -> dbf.build());
 
     }
@@ -260,37 +265,29 @@ public class BuyProductReaderImpl implements BuyProductReader {
         CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
                 .get_lines_for_keys(names_of_keys,keys));
 
-        order_id_list = order_line_list.thenApply(lines -> lines
-                .stream()
-                .map(line -> line.split(",")[0])
-                .distinct()
-                .collect(Collectors.toList()));
 
-        List<CompletableFuture<String>> orders = order_line_list.thenCompose(lines -> lines
-                .stream()
-                .map(line -> line).collect(Collectors.toList()));
 
-        res_list = order_line_list.thenCompose(lines ->
-                lines
-                .stream()
-                .map(line -> {
-                    String line_values[] = line.split(",");
-
-                    return isCanceledOrder(line_values[0]).thenApply(canceled -> //order_id
-                    {
-                        String ret_val = new String();
-
-                        if(canceled)
-                        {
-                            ret_val =  line_values[1];//user-id
-                        }
-
-                        return ret_val;
-                    });
-                })
-                        .distinct()
-                        .filter(s -> !s.isEmpty())
-                        .collect(Collectors.toList()));
+//        res_list = order_line_list.thenCompose(lines ->
+//                lines
+//                .stream()
+//                .map(line -> {
+//                    String line_values[] = line.split(",");
+//
+//                    return isCanceledOrder(line_values[0]).thenApply(canceled -> //order_id
+//                    {
+//                        String ret_val = new String();
+//
+//                        if(canceled)
+//                        {
+//                            ret_val =  line_values[1];//user-id
+//                        }
+//
+//                        return ret_val;
+//                    });
+//                })
+//                        .distinct()
+//                        .filter(s -> !s.isEmpty())
+//                        .collect(Collectors.toList()));
 
         return res_list;
     }
