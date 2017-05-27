@@ -51,10 +51,9 @@ public class BuyProductReaderImpl implements BuyProductReader {
                 .thenApply(dbf -> dbf.setAllow_Multiples(Boolean.FALSE))
                 .thenCompose(dbf -> dbf.build());
 
-        Integer num_of_keys_modified_ordersDB = 2;
+        Integer num_of_keys_modified_ordersDB = 1;
         List<String> names_of_columns_modified_ordersDB = new ArrayList<>();
         names_of_columns_modified_ordersDB.add("order");
-        names_of_columns_modified_ordersDB.add("number");
         names_of_columns_modified_ordersDB.add("amount");
         this.modified_ordersDB = dataBaseFactoryCompletableFuture
                 .thenApply(dbf-> dbf.setDb_name("Modified"))
