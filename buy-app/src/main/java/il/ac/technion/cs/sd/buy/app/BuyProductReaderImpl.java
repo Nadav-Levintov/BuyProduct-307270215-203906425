@@ -117,6 +117,11 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
     @Override
     public CompletableFuture<OptionalInt> getNumberOfProductOrdered(String orderId) {
+
+        CompletableFuture<Boolean> valid = isValidOrderId(orderId);
+        CompletableFuture<Boolean> modified = isModifiedOrder(orderId);
+        CompletableFuture<Boolean> canceled = isCanceledOrder(orderId);
+
         List<String> names_of_keys = new ArrayList<>();
         names_of_keys.add("order");
         List<String> keys = new ArrayList<>();
@@ -133,11 +138,10 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
         //TODO: can we use compose to eliminate the "get()"?
 
-
         try {
-            if(isValidOrderId(orderId).get())
+            if(valid.get())
             {
-                if(isModifiedOrder(orderId).get())
+                if(modified.get())
                 {
                     line = mod_line_list.thenApply(lines -> lines.get(lines.size()-1));
                     res = line.thenApply(l -> Integer.parseInt(l.split(",")[1]));
@@ -148,7 +152,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                     res = line.thenApply(l -> Integer.parseInt(l.split(",")[2]));
                 }
 
-                if(isCanceledOrder(orderId).get())
+                if(canceled.get())
                 {
                     res = res.thenApply(r -> r*(-1));
                 }
@@ -262,31 +266,31 @@ public class BuyProductReaderImpl implements BuyProductReader {
                 .distinct()
                 .collect(Collectors.toList()));
 
-        List<String> names_of_keys2 = new ArrayList<>();
-        names_of_keys2.add("order");
+        List<CompletableFuture<String>> orders = order_line_list.thenCompose(lines -> lines
+                .stream()
+                .map(line -> line).collect(Collectors.toList()));
 
-        res_list = order_line_list.thenApply(lines -> lines
+        res_list = order_line_list.thenCompose(lines ->
+                lines
                 .stream()
                 .map(line -> {
-                    String arr[] = line.split(",");
-                    CompletableFuture<List<String>> canceled_lines = canceled_ordersDB.thenCompose(orders -> orders
-                    .get_lines_for_keys(names_of_keys2,Arrays.asList(arr[0])));
+                    String line_values[] = line.split(",");
 
-                    try {
-                        if(canceled_lines.get().isEmpty())
+                    return isCanceledOrder(line_values[0]).thenApply(canceled -> //order_id
+                    {
+                        String ret_val = new String();
+
+                        if(canceled)
                         {
-                            return arr[1];
+                            ret_val =  line_values[1];//user-id
                         }
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException();
-                    } catch (ExecutionException e) {
-                        throw new RuntimeException();
-                    }
-                    return new String();
+
+                        return ret_val;
+                    });
                 })
-                .distinct()
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList()));
+                        .distinct()
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList()));
 
         return res_list;
     }

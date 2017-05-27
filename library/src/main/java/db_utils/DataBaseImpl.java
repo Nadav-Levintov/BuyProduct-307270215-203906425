@@ -18,6 +18,7 @@ public class DataBaseImpl implements DataBase {
     private final Integer num_of_keys;
     private final List<String> names_of_columns;
     private final FutureLineStorageFactory futureLineStorageFactory;
+    private Boolean allow_multiples;
 
 
     //Private Functions
@@ -213,12 +214,13 @@ public class DataBaseImpl implements DataBase {
 
     //Public Functions
 
-    public DataBaseImpl(String db_name, Integer num_of_keys, List<String> names_of_columns, FutureLineStorageFactory futureLineStorageFactory) {
+    public DataBaseImpl(String db_name, Integer num_of_keys, List<String> names_of_columns, FutureLineStorageFactory futureLineStorageFactory, Boolean allow_multiples) {
         this.db_name = db_name;
         this.num_of_keys=num_of_keys;
         this.names_of_columns = names_of_columns;
         this.num_of_columns=names_of_columns.size();
         this.futureLineStorageFactory = futureLineStorageFactory;
+        this.allow_multiples = allow_multiples;
     }
 
     public CompletableFuture<Void> build_db(String csv_data){

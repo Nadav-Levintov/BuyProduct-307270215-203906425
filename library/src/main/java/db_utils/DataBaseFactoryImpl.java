@@ -13,6 +13,7 @@ public class DataBaseFactoryImpl implements DataBaseFactory {
     private Integer num_of_keys;
     private List<String> names_of_columns;
     private String db_name;
+    private Boolean allow_multiples;
     private final FutureLineStorageFactory futureLineStorageFactory;
 
     @Inject
@@ -20,6 +21,8 @@ public class DataBaseFactoryImpl implements DataBaseFactory {
         this.futureLineStorageFactory = futureLineStorageFactory;
         names_of_columns = null;
         num_of_keys = null;
+        db_name = null;
+        allow_multiples = null;
     }
 
 
@@ -33,12 +36,19 @@ public class DataBaseFactoryImpl implements DataBaseFactory {
         return this;
     }
 
+    @Override
+    public DataBaseFactory setAllow_Multiples(Boolean allow_multiples) {
+        this.allow_multiples=allow_multiples;
+        return this;
+    }
+
     public CompletableFuture<DataBase> build()
     {
         return CompletableFuture.completedFuture(new DataBaseImpl(db_name,
                 num_of_keys,
                 names_of_columns,
-                futureLineStorageFactory));
+                futureLineStorageFactory,
+                allow_multiples));
     }
 
     public DataBaseFactory setDb_name(String db_name) {
