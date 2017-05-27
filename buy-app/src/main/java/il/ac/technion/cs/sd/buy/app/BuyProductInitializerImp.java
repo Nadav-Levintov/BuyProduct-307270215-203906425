@@ -80,6 +80,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         CompletableFuture<DataBase> ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns1)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Orders")
+                .setAllow_Multiples(false)
                 .build();
 
         num_of_keys = 1;
@@ -89,6 +90,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         CompletableFuture<DataBase> productsDB = dataBaseFactory.setNames_of_columns(names_of_columns2)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Products")
+                .setAllow_Multiples(false)
                 .build();
 
         num_of_keys = 2;
@@ -99,6 +101,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         CompletableFuture<DataBase> modified_ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns3)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Modified")
+                .setAllow_Multiples(true)
                 .build();
 
         num_of_keys = 1;
@@ -107,6 +110,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         CompletableFuture<DataBase> canceled_ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns4)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Canceled")
+                .setAllow_Multiples(false)
                 .build();
 
         try {
@@ -236,11 +240,15 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                             csvProducts = arr.getJSONObject(i).getString("id") + "," +
                                     arr.getJSONObject(i).getInt("price") + "\n";
                             productsMap.put(productId, csvProducts);
-
-/////////////////////////////////
-
                             break;
                         case "modify-order":
+                            String mOrdertId = new String(arr.getJSONObject(i).getString("order-id"));
+                            if(ordersMap.containsKey(mOrdertId))
+                            {
+
+                                csvModified = arr.getJSONObject(i).getString("order-id") +"," +
+                                        arr.getJSONObject(i).getInt("amount") + "\n";
+                            }
                             // check if order exist - if not -> do nothing
                             // check if there are a canceld order - if there is -> remove it
                             // add to the multi map od modified
