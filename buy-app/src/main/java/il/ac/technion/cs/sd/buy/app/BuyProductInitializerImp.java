@@ -93,10 +93,9 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                 .setAllow_Multiples(false)
                 .build();
 
-        num_of_keys = 2;
+        num_of_keys = 1;
         List<String> names_of_columns3 = new ArrayList<>();
         names_of_columns3.add("order");
-        names_of_columns3.add("number");
         names_of_columns3.add("amount");
         CompletableFuture<DataBase> modified_ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns3)
                 .setNum_of_keys(num_of_keys)
@@ -154,6 +153,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             return csvCanceled;
         }
 
+ /*
         public CsvStringsFromJson invoke() {
             Map<String,Integer> OrderIDs = new TreeMap<>();
             csvOrders = new String();
@@ -206,12 +206,12 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             }
             return this;
         }
-
-        public CsvStringsFromJson help1() {
+*/
+        public CsvStringsFromJson invoke() {
             Map<String,String> ordersMap = new TreeMap<>();
             Map<String,String> productsMap = new TreeMap<>();
             ListMultimap<String,String> modifiedOrdersMap = ArrayListMultimap.create();
-            HashSet<String> canceldOrders = new HashSet<>();
+            Map<String,String> canceldOrders = new TreeMap<>();
 
             try {
                 JSONArray arr = new JSONArray(jsonData);
@@ -242,22 +242,26 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                             productsMap.put(productId, csvProducts);
                             break;
                         case "modify-order":
-                            String mOrdertId = new String(arr.getJSONObject(i).getString("order-id"));
-                            if(ordersMap.containsKey(mOrdertId))
+                            String mOrderId = new String(arr.getJSONObject(i).getString("order-id"));
+                            // check if order exist - if not -> do nothing
+                            if(ordersMap.containsKey(mOrderId))
                             {
-
                                 csvModified = arr.getJSONObject(i).getString("order-id") +"," +
                                         arr.getJSONObject(i).getInt("amount") + "\n";
+                                //  there are a canceled order  -> remove it
+                                canceldOrders.remove(mOrderId);
+                                // add to the multi map of modified
+                                modifiedOrdersMap.put(mOrderId,csvModified);
                             }
-                            // check if order exist - if not -> do nothing
-                            // check if there are a canceld order - if there is -> remove it
-                            // add to the multi map od modified
-
                             break;
                         case "cancel-order":
-                            // check if order exist -> if not do nothing
-                            // insert to canceld orders set (remove old versions)
-
+                            String cOrderId = new String(arr.getJSONObject(i).getString("order-id"));
+                            csvCanceled = cOrderId + "\n";
+                            // check if order exist - if not -> do nothing
+                            if(ordersMap.containsKey(cOrderId)) {
+                                // insert to canceld orders set (remove old versions)
+                                canceldOrders.put(cOrderId,csvCanceled);
+                            }
                             break;
                         default:
                             System.out.println("JSON file is not legal");
@@ -270,10 +274,43 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
 
 
             // foreach order check that product exist -> if not don put in string
-            //  foreach modified order add secondary key aa>zz (max of 100 )
+            csvOrders = "";
+            for (Map.Entry<String,String> entry : ordersMap.entrySet())
+            {
+                String product = entry.getValue().split(",")[3];
+                if(productsMap.containsKey(product)){
+                    csvOrders+= entry.getValue();
+                }
+            }
 
+            //insert Canceled orders to string
+            csvCanceled = "";
+            for (Map.Entry<String,String> entry : canceldOrders.entrySet())
+            {
+                csvCanceled+= entry.getValue();
+            }
+
+            //insert products to string
+            csvProducts = "";
+            for (Map.Entry<String,String> entry : productsMap.entrySet())
+            {
+                csvProducts+= entry.getValue();
+            }
+
+
+            //insert Modified orders to string
+            csvModified = "";
+            for (Map.Entry entry : modifiedOrdersMap.entries())
+            {
+                for (String Value: (ArrayList<String>)entry.getValue())
+                {
+                    csvModified+=Value;
+
+                }
+            }
             return this;
         }
+
     }
 
     private class CsvStringsFromXml {
@@ -363,5 +400,113 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             }
             return this;
         }
+
+        public CsvStringsFromXml invoke2() {
+            Map<String,String> ordersMap = new TreeMap<>();
+            Map<String,String> productsMap = new TreeMap<>();
+            ListMultimap<String,String> modifiedOrdersMap = ArrayListMultimap.create();
+            Map<String,String> canceldOrders = new TreeMap<>();
+
+            try {
+                JSONArray arr = new JSONArray(jsonData);
+                for (int i = 0; i < arr.length(); i++) {
+                    String type = arr.getJSONObject(i).getString("type");
+
+                    switch (type){
+                        case "order":
+                            // add to map - (will remove old)
+                            String orderId = new String(arr.getJSONObject(i).getString("order-id"));
+
+                            csvOrders = arr.getJSONObject(i).getString("order-id") + "," +
+                                    arr.getJSONObject(i).getString("user-id") + "," +
+                                    arr.getJSONObject(i).getString("product-id") + "," +
+                                    arr.getJSONObject(i).getInt("amount") + "\n";
+                            ordersMap.put(orderId,csvOrders);
+                            // remove from canceled
+                            canceldOrders.remove(orderId);
+                            // remove from modified
+                            modifiedOrdersMap.removeAll(orderId);
+                            break;
+
+                        case "product":
+                            // add to map of the products - remove old ones
+                            String productId = new String(arr.getJSONObject(i).getString("id"));
+                            csvProducts = arr.getJSONObject(i).getString("id") + "," +
+                                    arr.getJSONObject(i).getInt("price") + "\n";
+                            productsMap.put(productId, csvProducts);
+                            break;
+                        case "modify-order":
+                            String mOrderId = new String(arr.getJSONObject(i).getString("order-id"));
+                            // check if order exist - if not -> do nothing
+                            if(ordersMap.containsKey(mOrderId))
+                            {
+                                csvModified = arr.getJSONObject(i).getString("order-id") +"," +
+                                        arr.getJSONObject(i).getInt("amount") + "\n";
+                                //  there are a canceled order  -> remove it
+                                canceldOrders.remove(mOrderId);
+                                // add to the multi map of modified
+                                modifiedOrdersMap.put(mOrderId,csvModified);
+                            }
+                            break;
+                        case "cancel-order":
+                            String cOrderId = new String(arr.getJSONObject(i).getString("order-id"));
+                            csvCanceled = cOrderId + "\n";
+                            // check if order exist - if not -> do nothing
+                            if(ordersMap.containsKey(cOrderId)) {
+                                // insert to canceld orders set (remove old versions)
+                                canceldOrders.put(cOrderId,csvCanceled);
+                            }
+                            break;
+                        default:
+                            System.out.println("JSON file is not legal");
+                    }
+                }
+
+            }catch(JSONException e){
+                System.out.println("catch JSONException");
+            }
+
+
+            // foreach order check that product exist -> if not don put in string
+            csvOrders = "";
+            for (Map.Entry<String,String> entry : ordersMap.entrySet())
+            {
+                String product = entry.getValue().split(",")[3];
+                if(productsMap.containsKey(product)){
+                    csvOrders+= entry.getValue();
+                }
+            }
+
+            //insert Canceled orders to string
+            csvCanceled = "";
+            for (Map.Entry<String,String> entry : canceldOrders.entrySet())
+            {
+                csvCanceled+= entry.getValue();
+            }
+
+            //insert products to string
+            csvProducts = "";
+            for (Map.Entry<String,String> entry : productsMap.entrySet())
+            {
+                csvProducts+= entry.getValue();
+            }
+
+
+            //insert Modified orders to string
+            csvModified = "";
+            for (Map.Entry entry : modifiedOrdersMap.entries())
+            {
+                for (String Value: (ArrayList<String>)entry.getValue())
+                {
+                    csvModified+=Value;
+
+                }
+            }
+            return this;
+        }
+
+
+
+
     }
 }
