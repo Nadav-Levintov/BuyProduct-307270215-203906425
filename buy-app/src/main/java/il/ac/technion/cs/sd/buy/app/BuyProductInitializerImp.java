@@ -45,6 +45,11 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         String csvModified = csvStrings.getCsvModified();
         String csvCanceled = csvStrings.getCsvCanceled();
 
+        System.out.println("csvOrders:\n" + csvOrders);
+        System.out.println("csvProducts:\n" + csvProducts);
+        System.out.println("csvModified:\n" + csvModified);
+        System.out.println("csvCanceled:\n" + csvCanceled);
+
         createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified, csvCanceled);
 
         return new CompletableFuture<>();
@@ -59,8 +64,13 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         String csvProducts = csvStringsFromXml.getCsvProducts();
         String csvModified = csvStringsFromXml.getCsvModified();
         String csvCanceled = csvStringsFromXml.getCsvCanceled();
-        createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified, csvCanceled);
 
+        System.out.println("csvOrders:\n" + csvOrders);
+        System.out.println("csvProducts:\n" + csvProducts);
+        System.out.println("csvModified:\n" + csvModified);
+        System.out.println("csvCanceled:\n" + csvCanceled);
+
+        createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified, csvCanceled);
 
         return new CompletableFuture<>();
     }
@@ -152,60 +162,6 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             return csvCanceled;
         }
 
-        /*
-               public CsvStringsFromJson invoke() {
-                   Map<String,Integer> OrderIDs = new TreeMap<>();
-                   csvOrders = new String();
-                   csvProducts = new String();
-                   csvModified = new String();
-                   csvCanceled = new String();
-                   int number =1;
-
-                   try {
-                       JSONArray arr = new JSONArray(jsonData);
-                       for (int i = 0; i < arr.length(); i++) {
-                           String type = arr.getJSONObject(i).getString("type");
-
-                           switch (type){
-                               case "order":
-                                   csvOrders += arr.getJSONObject(i).getString("order-id") + "," +
-                                           arr.getJSONObject(i).getString("user-id") + "," +
-                                           arr.getJSONObject(i).getString("product-id") + "," +
-                                           arr.getJSONObject(i).getInt("amount") + "\n";
-                                   OrderIDs.put(arr.getJSONObject(i).getString("order-id"),1); //In order to discard canceled/modified orders that does not exist
-                                   break;
-                               case "product":
-                                   csvProducts += arr.getJSONObject(i).getString("id") + "," +
-                                           arr.getJSONObject(i).getInt("price") + "\n";
-                                  break;
-                               case "modify-order":
-                                 if(OrderIDs.containsKey(arr.getJSONObject(i).getString("order-id")))
-                                    {
-
-                                        csvModified += arr.getJSONObject(i).getString("order-id") + "," +
-                                                number + "," +
-                                                arr.getJSONObject(i).getInt("amount") + "\n";
-                                        number++;
-                                    }
-                                 break;
-                               case "cancel-order":
-                                 if(OrderIDs.containsKey(arr.getJSONObject(i).getString("order-id")))
-                                   {
-                                       csvCanceled += arr.getJSONObject(i).getString("order-id") + "\n";
-                                   }
-
-                                 break;
-                               default:
-                                   System.out.println("JSON file is not legal");
-                           }
-                       }
-
-                   }catch(JSONException e){
-                       System.out.println("catch JSONException");
-                   }
-                   return this;
-               }
-       */
         public CsvStringsFromJson invoke() {
             Map<String, String> ordersMap = new TreeMap<>();
             Map<String, String> productsMap = new TreeMap<>();
@@ -274,7 +230,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             // foreach order check that product exist -> if not don put in string
             csvOrders = "";
             for (Map.Entry<String, String> entry : ordersMap.entrySet()) {
-                String product = entry.getValue().split(",")[3];
+                String product = entry.getValue().split(",")[2];
                 if (productsMap.containsKey(product)) {
                     csvOrders += entry.getValue();
                     Integer modifiedAmount = 0;
@@ -304,10 +260,10 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
 
             //insert Modified orders to string
             csvModified = "";
-            for (Map.Entry entry : modifiedOrdersMap.entries()) {
-                for (String Value : (ArrayList<String>) entry.getValue()) {
+            for(String key : modifiedOrdersMap.keySet()){
+                Collection<String> values = modifiedOrdersMap.get(key);
+                for (String Value : values) {
                     csvModified += Value;
-
                 }
             }
             return this;
@@ -342,68 +298,6 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             return csvCanceled;
         }
 
-        /*
-                public CsvStringsFromXml invoke() throws ParserConfigurationException, SAXException, IOException {
-                    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-                    DocumentBuilder db=dbf.newDocumentBuilder();
-                    InputSource is = new InputSource((new StringReader(xmlData)));
-                    Document doc = db.parse(is);
-                    doc.getDocumentElement().normalize();
-
-                    csvOrders = new String();
-                    csvProducts = new String();
-                    csvModified = new String();
-                    csvCanceled = new String();
-                    int number=0;
-                    Map<String,Integer> OrderIDs = new TreeMap<>();
-
-                    Node n = doc.getFirstChild();   //The root
-                    NodeList nListElements = n.getChildNodes();
-                    for (int temp = 0; temp < nListElements.getLength(); temp++)
-                    {
-                        Node elementNode = nListElements.item(temp);
-                        if (elementNode.getNodeType() == Node.ELEMENT_NODE)
-                        {
-                            Element element = (Element) elementNode;
-                            switch (elementNode.getNodeName()){
-                                case "Order":
-                                    csvOrders += element.getElementsByTagName("order-id").item(0).getTextContent() + "," +
-                                            element.getElementsByTagName("user-id") .item(0).getTextContent() + "," +
-                                            element.getElementsByTagName("product-id").item(0).getTextContent() + "," +
-                                            element.getElementsByTagName("amount").item(0).getTextContent() + "\n";
-                                    OrderIDs.put(element.getElementsByTagName("user-id") .item(0).getTextContent(),1); //In order to discard canceled/modified orders that does not exist
-                                    break;
-
-                                case "Product":
-                                    csvProducts += element.getElementsByTagName("id").item(0).getTextContent() + "," +
-                                            element.getElementsByTagName("price") .item(0).getTextContent()+ "\n";
-                                    break;
-
-                                case "ModifyOrder":
-                                    if(OrderIDs.containsKey(element.getElementsByTagName("order-id").item(0).getTextContent()))
-                                    {
-                                        csvModified += element.getElementsByTagName("order-id").item(0).getTextContent() + "," +
-                                                number + "," +
-                                                element.getElementsByTagName("new-amount").item(0).getTextContent() + "\n";
-                                        number++;
-                                    }
-                                    break;
-
-                                case "CancelOrder":
-                                    if(OrderIDs.containsKey(element.getElementsByTagName("order-id").item(0).getTextContent()))
-                                    {
-                                         csvCanceled += element.getElementsByTagName("order-id").item(0).getTextContent() + "\n";
-                                    }
-                                    break;
-
-                                default:
-                                    System.out.println("XML file is not legal");
-                            }
-                        }
-                    }
-                    return this;
-                }
-        */
         public CsvStringsFromXml invoke() throws ParserConfigurationException, IOException, SAXException {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
@@ -472,6 +366,8 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                                 // insert to canceld orders set (remove old versions)
                                 canceldOrders.put(cOrderId, csvCanceled);
                             }
+
+                            break;
                         default:
                             System.out.println("XML file is not legal");
                     }
@@ -480,7 +376,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             // foreach order check that product exist -> if not don put in string
             csvOrders = "";
             for (Map.Entry<String, String> entry : ordersMap.entrySet()) {
-                String product = entry.getValue().split(",")[3];
+                String product = entry.getValue().split(",")[2];
                 if (productsMap.containsKey(product)) {
                     csvOrders += entry.getValue();
                     Integer modifiedAmount = 0;
@@ -510,12 +406,13 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
 
             //insert Modified orders to string
             csvModified = "";
-            for (Map.Entry entry : modifiedOrdersMap.entries()) {
-                for (String Value : (ArrayList<String>) entry.getValue()) {
+            for(String key : modifiedOrdersMap.keySet()){
+                Collection<String> values = modifiedOrdersMap.get(key);
+                for (String Value : values) {
                     csvModified += Value;
-
                 }
             }
+
             return this;
         }
 

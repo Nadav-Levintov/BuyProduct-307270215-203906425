@@ -245,7 +245,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
         CompletableFuture<Long> res = CompletableFuture.completedFuture(new Long(0));
 
-        List<String> names_of_keys = new ArrayList<>();
+    /*    List<String> names_of_keys = new ArrayList<>();
         names_of_keys.add("user");
         List<String> keys = new ArrayList<>();
         keys.add(userId);
@@ -267,10 +267,9 @@ public class BuyProductReaderImpl implements BuyProductReader {
                         Boolean is_canceled = Boolean.parseBoolean(line_values[4]);
 
                         CompletableFuture<Integer> price = productsDB.thenCompose(products ->
-                                products.get_val_from_column_by_name(new ArrayList<String>(Arrays.asList(product_id)),"price"))
+                               products.get_val_from_column_by_name(new ArrayList<String>(Arrays.asList(product_id)),"price"))
                                 .thenApply(price_optional ->
-                                Integer.parseInt(price_optional.get())
-                        );
+                                Integer.parseInt(price_optional.get()));
 
                         CompletableFuture<Integer> amount = CompletableFuture.completedFuture(Integer.parseInt(order_amount));
 
@@ -289,7 +288,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                         return price.thenCombine(amount,(price_val, amount_val) -> price_val*amount_val);
                     }).collect(Collectors.toList());
         });
-
+*/
 
     return res;
     }

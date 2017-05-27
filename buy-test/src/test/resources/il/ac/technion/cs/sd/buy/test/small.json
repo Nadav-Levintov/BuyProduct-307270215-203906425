@@ -11,5 +11,6 @@
   {"type": "modify-order", "order-id": "foo1234", "amount": 10},
   {"type": "cancel-order", "order-id": "foo1234"},
   {"type": "cancel-order", "order-id": "noOrder"},
-  {"type": "modify-order", "order-id": "noOrder2", "amount": 11}
+  {"type": "modify-order", "order-id": "noOrder2", "amount": 11},
+  {"type": "modify-order", "order-id": "foo1234", "amount": 11}
 ]

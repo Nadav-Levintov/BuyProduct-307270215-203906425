@@ -42,15 +42,16 @@ public class DataBaseImpl implements DataBase {
     {
 
         CompletableFuture<FutureLineStorage> lineStorage = futureLineStorageFactory.open(fileName);
-        for (Map.Entry entry : multiMap.entries())
+        for (String key : multiMap.keySet())
         {
-            String outputKey = (String)entry.getKey();
+            List<String> values = multiMap.get(key);
+            String outputKey = key;
             if(this.allow_multiples)
             {
-                for ( String valuStr: (ArrayList<String>)entry.getValue() )
+                for ( String valueStr: values)
                 {
                     try {
-                        lineStorage.thenApply(storage -> storage.appendLine(outputKey + valuStr)).get();
+                        lineStorage.thenApply(storage -> storage.appendLine(outputKey + valueStr)).get();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     } catch (ExecutionException e) {
@@ -59,7 +60,7 @@ public class DataBaseImpl implements DataBase {
                 }
             }else
             {
-                String lastValueStr = new String(((ArrayList<String>)entry.getValue()).get(((ArrayList<String>)entry.getValue()).size()));
+                String lastValueStr = values.get(values.size()-1);
                 try {
                     lineStorage.thenApply(storage -> storage.appendLine(outputKey + lastValueStr)).get();
                 } catch (InterruptedException e) {
