@@ -3,6 +3,7 @@ package db_utils;
 
 
 
+import com.google.common.collect.ArrayListMultimap;
 import il.ac.technion.cs.sd.buy.ext.FutureLineStorageFactory;
 import il.ac.technion.cs.sd.buy.ext.FutureLineStorage;
 
@@ -37,21 +38,37 @@ public class DataBaseImpl implements DataBase {
         return fileName;
     }
 
-    private void write_map_to_new_file(Map<String,String> map, String fileName)
+    private void write_map_to_new_file(ArrayListMultimap<String,String> multiMap, String fileName)
     {
 
         CompletableFuture<FutureLineStorage> lineStorage = futureLineStorageFactory.open(fileName);
-
-        for(Map.Entry<String,String> entry : map.entrySet()) {
-            String output = entry.getKey() + entry.getValue();
-
-            try {
-                lineStorage.thenApply(storage -> storage.appendLine(output)).get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                throw new RuntimeException();
+        for (Map.Entry entry : multiMap.entries())
+        {
+            String outputKey = (String)entry.getKey();
+            if(this.allow_multiples)
+            {
+                for ( String valuStr: (ArrayList<String>)entry.getValue() )
+                {
+                    try {
+                        lineStorage.thenApply(storage -> storage.appendLine(outputKey + valuStr)).get();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException();
+                    }
+                }
+            }else
+            {
+                String lastValueStr = new String(((ArrayList<String>)entry.getValue()).get(((ArrayList<String>)entry.getValue()).size()));
+                try {
+                    lineStorage.thenApply(storage -> storage.appendLine(outputKey + lastValueStr)).get();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    throw new RuntimeException();
+                }
             }
+
         }
     }
 
@@ -123,10 +140,11 @@ public class DataBaseImpl implements DataBase {
     }
 
     //function get list of <all> the keys in the order of sorting and will be saved on disk in that order
-    private Map<String,String> create_file_sorted_by_keys(String csv_data, List<String> keys, List<Integer> currentIndexKeyList) {
+    private ArrayListMultimap<String,String> create_file_sorted_by_keys(String csv_data, List<String> keys, List<Integer> currentIndexKeyList) {
 
         String[] lines = csv_data.split("\n");
-        TreeMap<String,String> map = new TreeMap<>();
+       // TreeMap<String,String> map = new TreeMap<>();
+        ArrayListMultimap<String,String> map = ArrayListMultimap.create();
 
         for(String line : lines)
         {

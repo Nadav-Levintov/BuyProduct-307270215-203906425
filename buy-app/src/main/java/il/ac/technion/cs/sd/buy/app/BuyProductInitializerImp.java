@@ -1,4 +1,7 @@
 package il.ac.technion.cs.sd.buy.app;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimap;
 import db_utils.DataBase;
 import db_utils.DataBaseFactory;
 import org.json.JSONArray;
@@ -198,6 +201,57 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             }catch(JSONException e){
                 System.out.println("catch JSONException");
             }
+            return this;
+        }
+
+        public CsvStringsFromJson help1() {
+            Map<String,String> ordersMap = new TreeMap<>();
+            Map<String,Integer> productsMap = new TreeMap<>();
+            ListMultimap<String,String> modifiedOrdersMap = ArrayListMultimap.create();
+            ArrayList<String> canceldOrders = new ArrayList<>();
+
+            try {
+                JSONArray arr = new JSONArray(jsonData);
+                for (int i = 0; i < arr.length(); i++) {
+                    String type = arr.getJSONObject(i).getString("type");
+
+                    switch (type){
+                        case "order":
+                            // remove from canceld
+                            // remove from modified
+                            // add to map - (will remove old)
+
+
+                            break;
+                        case "product":
+                            // add to map of the products - remove old ones
+
+
+                            break;
+                        case "modify-order":
+                            // check if order exist - if not -> do nothing
+                            // check if there are a canceld order - if there is -> remove it
+                            // add to the multi map od modified
+
+                            break;
+                        case "cancel-order":
+                            // check if order exist -> if not do nothing
+                            // insert to canceld orders set (remove old versions)
+
+                            break;
+                        default:
+                            System.out.println("JSON file is not legal");
+                    }
+                }
+
+            }catch(JSONException e){
+                System.out.println("catch JSONException");
+            }
+
+
+            // foreach order check that product exist -> if not don put in string
+            //  foreach modified order add secondary key aa>zz (max of 100 )
+
             return this;
         }
     }
