@@ -186,37 +186,37 @@ public class BuyProductReaderImpl implements BuyProductReader {
         CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
                 .get_lines_for_keys(names_of_keys,keys));
 
-        CompletableFuture<List<String>> canceld_line_list = canceled_ordersDB.thenCompose(orders -> orders
+        CompletableFuture<List<String>> canceled_line_list = canceled_ordersDB.thenCompose(orders -> orders
                 .get_lines_for_keys(names_of_keys,keys));
-        CompletableFuture<Boolean> is_order_canceld = canceld_line_list.thenApply(lines -> lines.isEmpty());
 
         CompletableFuture<List<String>> mod_line_list = modified_ordersDB.thenCompose(orders -> orders
                 .get_lines_for_keys(names_of_keys,keys));
 
 
-        try {
-                order_line_list.thenApply(lines -> lines
-                        .stream()
-                        .map(line -> res_list
-                                .thenApply(list -> list
-                                        .add(Integer.parseInt(line.split(",")[2])))));
+        order_line_list.thenApply(lines -> lines
+                .stream()
+                .map(line -> res_list
+                        .thenApply(list -> list
+                                .add(Integer.parseInt(line.split(",")[2]))))); // amount
 
-                mod_line_list.thenApply(lines -> lines
-                        .stream()
-                        .map(line -> res_list
-                                .thenApply(list -> list
-                                        .add(Integer.parseInt(line.split(",")[1])))));
+        mod_line_list.thenApply(lines -> lines
+                .stream()
+                .map(line -> res_list
+                        .thenApply(list -> list
+                                .add(Integer.parseInt(line.split(",")[1]))))); //amount
 
+        order_line_list.thenApply(lines -> lines
+                .stream()
+                .map(line -> res_list
+                        .thenApply(list ->
+                        {
+                            Boolean is_order_canceld =Boolean.parseBoolean(line.split(",")[4]);
+                            if(is_order_canceld) {
+                                list.add(-1);
+                            }
+                            return list;
+                        })));
 
-                if(is_order_canceld.get())
-                {
-                    res_list.thenApply(list -> list.add(-1));
-                }
-        } catch (InterruptedException e) {
-            throw new RuntimeException();
-        } catch (ExecutionException e) {
-            throw new RuntimeException();
-        }
         return res_list;
     }
 
@@ -245,9 +245,51 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
         CompletableFuture<Long> res = CompletableFuture.completedFuture(new Long(0));
 
-        CompletableFuture<List<String>> orderIds =  getOrderIdsForUser(userId);
+        List<String> names_of_keys = new ArrayList<>();
+        names_of_keys.add("user");
+        List<String> keys = new ArrayList<>();
+        keys.add(userId);
 
-        //TODO: need to under how to work with CompletableFuture<List<String>>
+        CompletableFuture<List<String>> future_orders_list =  ordersDB.thenCompose(orders -> orders
+                .get_lines_for_keys(names_of_keys,keys));
+
+        CompletableFuture<List<Integer>> transactions_prices = future_orders_list.thenCompose(orders_list ->
+        {
+            return orders_list.stream()
+                    .map(order_string ->
+                    {
+                        String line_values[] = order_string.split(",");
+
+                        String order_id = line_values[0];
+                        String product_id = line_values[1];
+                        String order_amount = line_values[2];
+                        Boolean is_modified = Boolean.parseBoolean(line_values[3]);
+                        Boolean is_canceled = Boolean.parseBoolean(line_values[4]);
+
+                        CompletableFuture<Integer> price = productsDB.thenCompose(products ->
+                                products.get_val_from_column_by_name(new ArrayList<String>(Arrays.asList(product_id)),"price"))
+                                .thenApply(price_optional ->
+                                Integer.parseInt(price_optional.get())
+                        );
+
+                        CompletableFuture<Integer> amount = CompletableFuture.completedFuture(Integer.parseInt(order_amount));
+
+                        if(!is_canceled)
+                        {
+                            if(is_modified)
+                            {
+                                amount= modified_ordersDB.thenCompose(modified_orders ->
+                                modified_orders.get_lines_for_keys(new ArrayList<String>(Arrays.asList("order")),
+                                        new ArrayList<String>(Arrays.asList(order_id)))).thenApply(modified_lines ->
+                                modified_lines.get(modified_lines.size()-1).split(",")[0]).thenApply( amount_str ->
+                                        Integer.parseInt(amount_str));
+                            }
+                        }
+
+                        return price.thenCombine(amount,(price_val, amount_val) -> price_val*amount_val);
+                    }).collect(Collectors.toList());
+        });
+
 
     return res;
     }
@@ -255,7 +297,6 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Override
     public CompletableFuture<List<String>> getUsersThatPurchased(String productId) {
         CompletableFuture<List<String>> res_list = CompletableFuture.completedFuture(new ArrayList<>());
-        CompletableFuture<List<String>> order_id_list = CompletableFuture.completedFuture(new ArrayList<>());
 
         List<String> names_of_keys = new ArrayList<>();
         names_of_keys.add("product");
@@ -265,29 +306,24 @@ public class BuyProductReaderImpl implements BuyProductReader {
         CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
                 .get_lines_for_keys(names_of_keys,keys));
 
+        res_list = order_line_list.thenApply(lines ->
+        lines
+        .stream()
+        .map(line ->{
+            String line_values[] = line.split(",");
+            String user_id = line_values[1];
+            Boolean is_canceled = Boolean.parseBoolean(line_values[4]);
 
-
-//        res_list = order_line_list.thenCompose(lines ->
-//                lines
-//                .stream()
-//                .map(line -> {
-//                    String line_values[] = line.split(",");
-//
-//                    return isCanceledOrder(line_values[0]).thenApply(canceled -> //order_id
-//                    {
-//                        String ret_val = new String();
-//
-//                        if(canceled)
-//                        {
-//                            ret_val =  line_values[1];//user-id
-//                        }
-//
-//                        return ret_val;
-//                    });
-//                })
-//                        .distinct()
-//                        .filter(s -> !s.isEmpty())
-//                        .collect(Collectors.toList()));
+            String res = new String();
+            if(!is_canceled)
+            {
+                res =  user_id;
+            }
+            return res;
+        })
+        .distinct()
+        .filter(s -> !s.isEmpty())
+        .collect(Collectors.toList()));
 
         return res_list;
     }
