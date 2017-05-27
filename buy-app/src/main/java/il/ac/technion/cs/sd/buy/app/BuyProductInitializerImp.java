@@ -92,7 +92,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                 .setDb_name("Products")
                 .setAllow_Multiples(false)
                 .build();
- 
+
         num_of_keys = 1;
         List<String> names_of_columns3 = new ArrayList<>();
         names_of_columns3.add("order");
@@ -226,7 +226,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                             csvOrders = arr.getJSONObject(i).getString("order-id") + "," +
                                     arr.getJSONObject(i).getString("user-id") + "," +
                                     arr.getJSONObject(i).getString("product-id") + "," +
-                                    arr.getJSONObject(i).getInt("amount") + "\n";
+                                    arr.getJSONObject(i).getInt("amount") + ",";
                             ordersMap.put(orderId,csvOrders);
                             // remove from canceled
                             canceldOrders.remove(orderId);
@@ -280,6 +280,15 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                 String product = entry.getValue().split(",")[3];
                 if(productsMap.containsKey(product)){
                     csvOrders+= entry.getValue();
+                    Integer modifiedAmount = 0;
+                    Integer canceled = 0;
+                    if(modifiedOrdersMap.containsKey(entry.getKey())){
+                        modifiedAmount = modifiedOrdersMap.get(entry.getKey()).size();
+                    }
+                    if(canceldOrders.containsKey(entry.getKey())){
+                        canceled = 1;
+                    }
+                    csvOrders+= modifiedAmount.toString() + "," + canceled.toString() + "\n";
                 }
             }
 
