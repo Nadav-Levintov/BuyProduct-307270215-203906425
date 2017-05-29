@@ -255,11 +255,11 @@ public class DataBaseTest {
         assertEquals(Optional.of("b"),val5.get());
 
     }
-/*
+
     @Test
     public void get_lines_for_key() throws Exception {
     }
-
+/*
     @Test
     public void get_val_from_column_by_column_number_2_keys() throws Exception {
 
