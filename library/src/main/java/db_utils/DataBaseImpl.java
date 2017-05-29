@@ -271,22 +271,22 @@ public class DataBaseImpl implements DataBase {
 
         CompletableFuture<Optional<String>> res= rowNumber.thenCompose(row_number_val ->
         {
+            CompletableFuture<Optional<String>> res_optional = CompletableFuture.completedFuture(Optional.empty());
             if(row_number_val>=0)
             {
                 CompletableFuture<String> curr_line;
+                CompletableFuture<String> val;
                 curr_line = lineStorage.thenCompose(ls -> ls.read(row_number_val));
-                CompletableFuture<String> value = curr_line.thenApply(curr_line_val ->
+                val = curr_line.thenApply(curr_line_val ->
                 {
                     String[] arr = curr_line_val.split(",");
                    return  arr[names_of_columns.indexOf(column)];
                 });
-                return value.thenCompose(val -> Optional.of(new String(val)));
 
+                res_optional = val.thenApply(val_str -> Optional.of(val_str));
             }
-            else
-            {
-                return Optional.empty();
-            }
+
+            return res_optional;
 
         });
 
@@ -324,6 +324,39 @@ public class DataBaseImpl implements DataBase {
 
     }
 
+    private CompletableFuture<List<String>> get_lines_with_key_starting_from_index (FutureLineStorage lineStorage,
+                                                                                    final String key,
+                                                                                    final List<String> keysList,
+                                                                                    final Integer index,
+                                                                                    final Integer number_of_lines)
+    {
+        if(index > number_of_lines)
+        {
+            return CompletableFuture.completedFuture(new ArrayList<String>());
+        }
+        CompletableFuture<List<String>> listCompletableFuture = get_lines_with_key_starting_from_index (lineStorage,
+                key,
+                keysList,
+                index+1,
+                number_of_lines);
+
+        CompletableFuture<String> curr_line = lineStorage.read(index);
+
+
+        return listCompletableFuture.thenCombine(curr_line,(list,curr_line_val) ->
+        {
+            String[] values = curr_line_val.split(",");
+            String curr_key = create_string_seperated_with_comma(values,keysList.size() );
+            Integer compare = key.compareTo(curr_key);
+            if (compare == 0) {
+                String output = curr_line_val.substring(key.length());
+                list.add(output);
+            }
+
+            return list;
+        });
+    }
+
     public CompletableFuture<List<String>> get_lines_for_keys(List<String> keysNameList, List<String> keysList) {
 
         get_lines_for_key_parameter_check(keysNameList, keysList);
@@ -334,27 +367,10 @@ public class DataBaseImpl implements DataBase {
 
         CompletableFuture<FutureLineStorage> futureLineStorage = futureLineStorageFactory.open(fileName);
 
-        List<String> results = new ArrayList<>();
+        //List<String> results = new ArrayList<>();
 
         String curr_line;
         Integer compare;
-        Integer numberOfLines;
-        FutureLineStorage lineStorage = null;
-        try {
-            lineStorage = futureLineStorage.get();
-        } catch (InterruptedException e) {
-            throw new RuntimeException();
-        } catch (ExecutionException e) {
-            throw new RuntimeException();
-        }
-
-        try {
-            numberOfLines = lineStorage.numberOfLines().get();
-        } catch (InterruptedException e) {
-            throw new RuntimeException();
-        } catch (ExecutionException e) {
-            throw new RuntimeException();
-        }
 
         String key=new String();
         for (String str: keysList)
@@ -362,38 +378,29 @@ public class DataBaseImpl implements DataBase {
             key+=str+",";
         }
 
-        //here have the key to search
-        Integer index = find_index_in_file(key,keysList.size(),lineStorage);
+        final String final_key = new String(key);
 
-        if(index<0) //case key not found
-        {
-            return CompletableFuture.completedFuture(results);
-        }
+        CompletableFuture<Integer> numberOfLines = futureLineStorage.thenCompose(lineStorage -> lineStorage.numberOfLines());
+
+
+        //here have the key to search
+        CompletableFuture<Integer> index = find_index_in_file(key,keysList.size(),futureLineStorage);
+
+
+//        if(index<0) //case key not found
+//        {
+//            return CompletableFuture.completedFuture(results);
+//        }
 
         //here find the first line in file with the right key
-        index = get_first_line_with_key(keysList, lineStorage, key, index);
+        index = index.thenCombine(futureLineStorage,(index_val,lineStorage) -> get_first_line_with_key(keysList, lineStorage, final_key, index_val))
+                .thenCompose(i -> i);
 
         //here it copies all the rows with the right key from the first
-        do {
-            try {
-                curr_line = lineStorage.read(index).get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException();
-            } catch (ExecutionException e) {
-                throw new RuntimeException();
-            }
-            String[] values = curr_line.split(",");
-            String curr_key = create_string_seperated_with_comma(values,keysList.size() );
-            compare = key.compareTo(curr_key);
-            if (compare == 0) {
-                String output = curr_line.substring(key.length());
-                results.add(output);
-            }
-            index++;
-        }
-        while(compare == 0 && index < numberOfLines);
-
-        return CompletableFuture.completedFuture(results);
+        return futureLineStorage.thenCombine(index,(lineStorage, index_val) ->
+        {
+            return numberOfLines.thenCompose(numberOfLines_val -> get_lines_with_key_starting_from_index(lineStorage,final_key,keysList,index_val,numberOfLines_val));
+        }).thenCompose(i->i);
     }
 
     public String getDb_name() {
