@@ -24,19 +24,19 @@ public class DataBaseTest {
 //    @Rule
 //    public Timeout globalTimeout = Timeout.seconds(30);
 
-    public CompletableFuture<DataBase> SetupAndBuildDataBase(Integer num_of_keys,List<String> names_of_columns,String csv_data)
+    public DataBase SetupAndBuildDataBase(Integer num_of_keys,List<String> names_of_columns,String csv_data)
     {
 
         Injector injector= Guice.createInjector(new MockedFutureLineStorageModule());
         DataBaseFactory dataBaseFactoryMock= injector.getInstance(DataBaseFactoryImpl.class);
 
-        CompletableFuture<DataBase> DB = null;
+        DataBase DB = null;
         DB = dataBaseFactoryMock.setNames_of_columns(names_of_columns)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Testing")
                 .build();
 
-        DB.thenApply(db -> db.build_db(csv_data));
+        DB.build_db(csv_data);
 
         return DB;
     }

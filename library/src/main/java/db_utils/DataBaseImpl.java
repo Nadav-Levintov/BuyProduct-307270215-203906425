@@ -50,24 +50,12 @@ public class DataBaseImpl implements DataBase {
             {
                 for ( String valueStr: values)
                 {
-                    try {
-                        lineStorage.thenApply(storage -> storage.appendLine(outputKey + valueStr)).get();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (ExecutionException e) {
-                        throw new RuntimeException();
-                    }
+                    lineStorage.thenApply(storage -> storage.appendLine(outputKey + valueStr));
                 }
             }else
             {
                 String lastValueStr = values.get(values.size()-1);
-                try {
-                    lineStorage.thenApply(storage -> storage.appendLine(outputKey + lastValueStr)).get();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    throw new RuntimeException();
-                }
+                lineStorage.thenApply(storage -> storage.appendLine(outputKey + lastValueStr));
             }
 
         }
@@ -95,40 +83,40 @@ public class DataBaseImpl implements DataBase {
         return true;
     }
 
-    private Integer find_index_in_file(String key, Integer keys_amount, FutureLineStorage lineStorage) {
+    private CompletableFuture<Integer> binary_search_future(final Integer high,final Integer low, CompletableFuture<FutureLineStorage> lineStorageCompletableFuture, String key,Integer keys_amount)
+    {
+        if (low>high) return CompletableFuture.completedFuture(new Integer(-1));
 
-        Integer low=0;
-        Integer high;
-        Integer numberOfLines=0;
-        String curr_line;
-        try
+        CompletableFuture<String> curr_line;
+        Integer mid = low +(high - low)/2;
+        curr_line = lineStorageCompletableFuture.thenCompose(ls -> ls.read(mid));
+        return curr_line.thenCompose(line ->
         {
-            numberOfLines = lineStorage.numberOfLines().get();
-        } catch (InterruptedException e) {
-            throw new RuntimeException();
-        } catch (ExecutionException e) {
-            throw new RuntimeException();
-        }
-
-        high = numberOfLines -1;
-        while (low <= high)
-        {
-            Integer mid = low + (high - low) / 2;
-            try {
-                curr_line = lineStorage.read(mid).get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException();
-            } catch (ExecutionException e) {
-                throw new RuntimeException();
-            }
-            String[] values = curr_line.split(",");
-            String curr_key= new String(create_string_seperated_with_comma(values, keys_amount));
+            String[] values = line.split(",");
+            String curr_key= create_string_seperated_with_comma(values, keys_amount);
             Integer compare=key.compareTo(curr_key);
-            if      (compare < 0) high = mid - 1;
-            else if (compare > 0) low = mid + 1;
-            else return mid;
-        }
-        return -1;      //case not found
+            if      (compare < 0) return binary_search_future(mid-1,low,lineStorageCompletableFuture,key,keys_amount);
+            else if (compare > 0) return binary_search_future(high,mid + 1,lineStorageCompletableFuture,key,keys_amount);
+            else return CompletableFuture.completedFuture(mid);
+        });
+    }
+
+    private CompletableFuture<Integer> find_index_in_file(String key, Integer keys_amount, CompletableFuture<FutureLineStorage> lineStorage) {
+
+        CompletableFuture<Integer> low=CompletableFuture.completedFuture(new Integer(0));
+        CompletableFuture<Integer> high, found_line_num;
+        CompletableFuture<Integer> numberOfLines;
+
+
+        numberOfLines = lineStorage.thenCompose(ls -> ls.numberOfLines());
+
+
+        high = numberOfLines.thenApply(val -> val-1);
+
+        return found_line_num=high.thenCombine(low,(high_val,low_val)->
+                binary_search_future(high_val,low_val,lineStorage,key,keys_amount))
+        .thenCompose(val -> val);
+
     }
 
     private String create_string_seperated_with_comma(String[] values, Integer length) {
@@ -207,28 +195,26 @@ public class DataBaseImpl implements DataBase {
         return fileName;
     }
 
-    private Integer get_first_line_with_key(List<String> keysList, FutureLineStorage lineStorage, String key, Integer index) {
-        String curr_line;
-        Integer compare;
-        if(index>0) {
-            do {
-                index--;
-                try {
-                    curr_line = lineStorage.read(index).get();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException();
-                } catch (ExecutionException e) {
-                    throw new RuntimeException();
-                }
-                String curr_key = new String();
-                curr_key = create_string_seperated_with_comma(curr_line.split(","), keysList.size());
-                compare = key.compareTo(curr_key);
-            } while (compare == 0 && index > 0 );
-            if(compare!=0){
-                index++;
-            }
-        }
-        return index;
+
+    private CompletableFuture<Integer> get_first_line_with_key(List<String> keysList, FutureLineStorage lineStorage, String key, final Integer index) {
+        if (index < 0 ) return CompletableFuture.completedFuture(0);
+
+        CompletableFuture<Integer> res = CompletableFuture.completedFuture(index);
+
+        return res.thenCompose(curr_index ->
+        {
+            CompletableFuture<String> curr_line;
+            curr_index--;
+            curr_line = lineStorage.read(curr_index);
+            CompletableFuture<String> curr_key = curr_line.thenApply(curr_line_str -> create_string_seperated_with_comma(curr_line_str.split(","), keysList.size()));
+
+            CompletableFuture<Integer> compare = curr_key.thenApply(curr_key_val -> key.compareTo(curr_key_val));
+            return compare.thenCompose(compare_val ->
+            {
+                if(compare_val!= 0) return CompletableFuture.completedFuture(index+1);
+                return get_first_line_with_key( keysList, lineStorage, key, index-1);
+            });
+        });
     }
 
     //Public Functions
@@ -279,32 +265,32 @@ public class DataBaseImpl implements DataBase {
         {
             key+=str+",";
         }
-        FutureLineStorage curr_lineStorage = null;
-        try {
-            curr_lineStorage = lineStorage.get();
-        } catch (InterruptedException e) {
 
-        } catch (ExecutionException e) {
-            throw new RuntimeException();
-        }
-        Integer rowNumber = null;
 
-        rowNumber = find_index_in_file(key, this.getNum_of_keys(), curr_lineStorage);
+        CompletableFuture<Integer> rowNumber = find_index_in_file(key, this.getNum_of_keys(), lineStorage);
 
-        if(rowNumber>=0)
+        CompletableFuture<Optional<String>> res= rowNumber.thenCompose(row_number_val ->
         {
-            String curr_line = new String();
-            try {
-                curr_line = curr_lineStorage.read(rowNumber).get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException();
-            } catch (ExecutionException e) {
-                throw new RuntimeException();
+            if(row_number_val>=0)
+            {
+                CompletableFuture<String> curr_line;
+                curr_line = lineStorage.thenCompose(ls -> ls.read(row_number_val));
+                CompletableFuture<String> value = curr_line.thenApply(curr_line_val ->
+                {
+                    String[] arr = curr_line_val.split(",");
+                   return  arr[names_of_columns.indexOf(column)];
+                });
+                return value.thenCompose(val -> Optional.of(new String(val)));
+
             }
-            String[] values = curr_line.split(",");
-            return CompletableFuture.completedFuture(Optional.of(values[names_of_columns.indexOf(column)]));
-        }
-        return CompletableFuture.completedFuture(Optional.empty());
+            else
+            {
+                return Optional.empty();
+            }
+
+        });
+
+        return res;
     }
 
     public CompletableFuture<Optional<String>> get_val_from_column_by_column_number(List<String> keys, Integer column) {

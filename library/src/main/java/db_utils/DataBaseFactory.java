@@ -14,7 +14,7 @@ public interface DataBaseFactory {
 
     public DataBaseFactory setAllow_Multiples(Boolean allow_multiples);
 
-    public CompletableFuture<DataBase> build();
+    public DataBase build();
 
     public DataBaseFactory setDb_name(String db_name);
 }

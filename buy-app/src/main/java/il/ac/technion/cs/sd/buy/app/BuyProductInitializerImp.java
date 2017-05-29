@@ -70,12 +70,11 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         System.out.println("csvModified:\n" + csvModified);
         System.out.println("csvCanceled:\n" + csvCanceled);
 
-        createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified, csvCanceled);
+        return createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified, csvCanceled);
 
-        return new CompletableFuture<>();
     }
 
-    private void createDataBasesFromCsvStrings(String csvOrders, String csvProducts, String csvModified, String csvCanceled) {
+    private CompletableFuture<Void> createDataBasesFromCsvStrings(String csvOrders, String csvProducts, String csvModified, String csvCanceled) {
         // build the data bases
         Integer num_of_keys = 3;
 
@@ -86,7 +85,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         names_of_columns1.add("amount");
         names_of_columns1.add("modified");
         names_of_columns1.add("canceled");
-        CompletableFuture<DataBase> ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns1)
+        DataBase ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns1)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Orders")
                 .setAllow_Multiples(false)
@@ -96,7 +95,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         List<String> names_of_columns2 = new ArrayList<>();
         names_of_columns2.add("product");
         names_of_columns2.add("price");
-        CompletableFuture<DataBase> productsDB = dataBaseFactory.setNames_of_columns(names_of_columns2)
+        DataBase productsDB = dataBaseFactory.setNames_of_columns(names_of_columns2)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Products")
                 .setAllow_Multiples(false)
@@ -106,7 +105,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         List<String> names_of_columns3 = new ArrayList<>();
         names_of_columns3.add("order");
         names_of_columns3.add("amount");
-        CompletableFuture<DataBase> modified_ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns3)
+        DataBase modified_ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns3)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Modified")
                 .setAllow_Multiples(true)
@@ -115,24 +114,22 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         num_of_keys = 1;
         List<String> names_of_columns4 = new ArrayList<>();
         names_of_columns4.add("order");
-        CompletableFuture<DataBase> canceled_ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns4)
+        DataBase canceled_ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns4)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Canceled")
                 .setAllow_Multiples(false)
                 .build();
 
-        try {
-            ordersDB.get().build_db(csvOrders);
-            productsDB.get().build_db(csvProducts);
-            modified_ordersDB.get().build_db(csvModified);
-            canceled_ordersDB.get().build_db(csvCanceled);
-        } catch (InterruptedException e) {
-            System.out.println("catch InterruptedException");
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            System.out.println("catch ExecutionException");
-            e.printStackTrace();
-        }
+        CompletableFuture<Void> order_build = ordersDB.build_db(csvOrders);
+        CompletableFuture<Void> product_build = productsDB.build_db(csvProducts);
+        CompletableFuture<Void> mod_build = modified_ordersDB.build_db(csvModified);
+        CompletableFuture<Void> canceled_build = canceled_ordersDB.build_db(csvCanceled);
+
+        // will finish build when all build finish
+        CompletableFuture<Void> order_product = order_build.thenCombine(product_build,(a,b)-> a);
+        CompletableFuture<Void> mod_cancel = mod_build.thenCombine(canceled_build,(a,b)-> a);
+        return order_product.thenCombine(mod_cancel,(a,b)-> a);
+
     }
 
     private class CsvStringsFromJson {

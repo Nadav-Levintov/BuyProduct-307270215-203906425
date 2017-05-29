@@ -16,13 +16,13 @@ import java.util.stream.Collectors;
  */
 public class BuyProductReaderImpl implements BuyProductReader {
 
-    private final CompletableFuture<DataBase> ordersDB;
-    private final CompletableFuture<DataBase> productsDB;
-    private final CompletableFuture<DataBase> modified_ordersDB;
-    private final CompletableFuture<DataBase> canceled_ordersDB;
+    private final DataBase ordersDB;
+    private final DataBase productsDB;
+    private final DataBase modified_ordersDB;
+    private final DataBase canceled_ordersDB;
 
     @Inject
-    public BuyProductReaderImpl(CompletableFuture<DataBaseFactory> dataBaseFactoryCompletableFuture) {
+    public BuyProductReaderImpl(DataBaseFactory dataBaseFactoryCompletableFuture) {
 
         Integer num_of_keys_ordersDB = new Integer(3);
 
@@ -35,11 +35,11 @@ public class BuyProductReaderImpl implements BuyProductReader {
         names_of_columns_OrdersDB.add("canceled");
 
         this.ordersDB = dataBaseFactoryCompletableFuture
-                .thenApply(dbf-> dbf.setDb_name("Orders"))
-                .thenApply(dbf -> dbf.setNames_of_columns(names_of_columns_OrdersDB))
-                .thenApply(dbf -> dbf.setNum_of_keys(num_of_keys_ordersDB))
-                .thenApply(dbf -> dbf.setAllow_Multiples(Boolean.FALSE))
-                .thenCompose(dbf -> dbf.build());
+                .setDb_name("Orders")
+                .setNames_of_columns(names_of_columns_OrdersDB)
+                .setNum_of_keys(num_of_keys_ordersDB)
+                .setAllow_Multiples(Boolean.FALSE)
+                .build();
 
 
         Integer num_of_keys_productsDB = 1;
@@ -47,32 +47,32 @@ public class BuyProductReaderImpl implements BuyProductReader {
         names_of_columns_productsDB.add("product");
         names_of_columns_productsDB.add("price");
         this.productsDB = dataBaseFactoryCompletableFuture
-                .thenApply(dbf-> dbf.setDb_name("Products"))
-                .thenApply(dbf -> dbf.setNames_of_columns(names_of_columns_productsDB))
-                .thenApply(dbf -> dbf.setNum_of_keys(num_of_keys_productsDB))
-                .thenApply(dbf -> dbf.setAllow_Multiples(Boolean.FALSE))
-                .thenCompose(dbf -> dbf.build());
+                .setDb_name("Products")
+                .setNames_of_columns(names_of_columns_productsDB)
+                .setNum_of_keys(num_of_keys_productsDB)
+                .setAllow_Multiples(Boolean.FALSE)
+                .build();
 
         Integer num_of_keys_modified_ordersDB = 1;
         List<String> names_of_columns_modified_ordersDB = new ArrayList<>();
         names_of_columns_modified_ordersDB.add("order");
         names_of_columns_modified_ordersDB.add("amount");
         this.modified_ordersDB = dataBaseFactoryCompletableFuture
-                .thenApply(dbf-> dbf.setDb_name("Modified"))
-                .thenApply(dbf -> dbf.setNames_of_columns(names_of_columns_modified_ordersDB))
-                .thenApply(dbf -> dbf.setNum_of_keys(num_of_keys_modified_ordersDB))
-                .thenApply(dbf -> dbf.setAllow_Multiples(Boolean.TRUE))
-                .thenCompose(dbf -> dbf.build());
+                .setDb_name("Modified")
+                .setNames_of_columns(names_of_columns_modified_ordersDB)
+                .setNum_of_keys(num_of_keys_modified_ordersDB)
+                .setAllow_Multiples(Boolean.TRUE)
+                .build();
 
         Integer num_of_keys_canceled_ordersDB = 1;
         List<String> names_of_columns_canceled_ordersDB = new ArrayList<>();
         names_of_columns_canceled_ordersDB.add("order");
         this.canceled_ordersDB = dataBaseFactoryCompletableFuture
-                .thenApply(dbf-> dbf.setDb_name("Canceled"))
-                .thenApply(dbf -> dbf.setNames_of_columns(names_of_columns_canceled_ordersDB))
-                .thenApply(dbf -> dbf.setNum_of_keys(num_of_keys_canceled_ordersDB))
-                .thenApply(dbf -> dbf.setAllow_Multiples(Boolean.FALSE))
-                .thenCompose(dbf -> dbf.build());
+                .setDb_name("Canceled")
+                .setNames_of_columns(names_of_columns_canceled_ordersDB)
+                .setNum_of_keys(num_of_keys_canceled_ordersDB)
+                .setAllow_Multiples(Boolean.FALSE)
+                .build();
 
     }
 
@@ -84,8 +84,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         keys.add(orderId);
 
 
-        CompletableFuture<List<String>> line_list = ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
         CompletableFuture<Boolean> res = line_list.thenApply(lines -> lines.isEmpty());
 
         return res.thenApply(r -> !r);
@@ -99,8 +98,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         keys.add(orderId);
 
 
-        CompletableFuture<List<String>> line_list = canceled_ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> line_list = canceled_ordersDB.get_lines_for_keys(names_of_keys,keys);
         CompletableFuture<Boolean> res = line_list.thenApply(lines -> lines.isEmpty());
 
         return res.thenApply(r -> !r);
@@ -114,8 +112,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         keys.add(orderId);
 
 
-        CompletableFuture<List<String>> line_list = modified_ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> line_list = modified_ordersDB.get_lines_for_keys(names_of_keys,keys);
         CompletableFuture<Boolean> res = line_list.thenApply(lines -> lines.isEmpty());
 
         return res.thenApply(r -> !r);
@@ -133,11 +130,9 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(orderId);
 
-        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
 
-        CompletableFuture<List<String>> mod_line_list = modified_ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> mod_line_list = modified_ordersDB.get_lines_for_keys(names_of_keys,keys);
 
         CompletableFuture<Integer> res;
         CompletableFuture<String> line;
@@ -184,14 +179,11 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(orderId);
 
-        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
 
-        CompletableFuture<List<String>> canceled_line_list = canceled_ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> canceled_line_list = canceled_ordersDB.get_lines_for_keys(names_of_keys,keys);
 
-        CompletableFuture<List<String>> mod_line_list = modified_ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> mod_line_list = modified_ordersDB.get_lines_for_keys(names_of_keys,keys);
 
 
         order_line_list.thenApply(lines -> lines
@@ -230,8 +222,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(userId);
 
-        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
 
         res_list = order_line_list.thenApply(lines -> lines
                 .stream()
@@ -251,8 +242,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(userId);
 
-        CompletableFuture<List<String>> future_orders_list =  ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> future_orders_list =  ordersDB.get_lines_for_keys(names_of_keys,keys);
 
 
         CompletableFuture<List<Integer>> transactions_prices = future_orders_list.thenCompose(orders_list ->
@@ -268,8 +258,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                 Boolean is_modified = Boolean.parseBoolean(line_values[3]);
                 Boolean is_canceled = Boolean.parseBoolean(line_values[4]);
 
-                CompletableFuture<Integer> price = productsDB.thenCompose(products ->
-                        products.get_val_from_column_by_name(new ArrayList<String>(Arrays.asList(product_id)),"price"))
+                CompletableFuture<Integer> price = productsDB.get_val_from_column_by_name(new ArrayList<String>(Arrays.asList(product_id)),"price")
                         .thenApply(price_optional ->
                                 Integer.parseInt(price_optional.get()));
 
@@ -278,9 +267,8 @@ public class BuyProductReaderImpl implements BuyProductReader {
                 {
                     if(is_modified)
                     {
-                        amount= modified_ordersDB.thenCompose(modified_orders ->
-                                modified_orders.get_lines_for_keys(new ArrayList<String>(Arrays.asList("order")),
-                                        new ArrayList<String>(Arrays.asList(order_id)))).thenApply(modified_lines ->
+                        amount= modified_ordersDB.get_lines_for_keys(new ArrayList<String>(Arrays.asList("order")),
+                                        new ArrayList<String>(Arrays.asList(order_id))).thenApply(modified_lines ->
                                 modified_lines.get(modified_lines.size()-1).split(",")[0]).thenApply( amount_str ->
                                 Integer.parseInt(amount_str));
                     }
@@ -309,8 +297,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(productId);
 
-        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
 
         res_list = order_line_list.thenApply(lines -> lines.stream()
         .map(line ->{
@@ -341,10 +328,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(productId);
 
-        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
-
-
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
 
         res_list = order_line_list.thenApply(lines -> lines
                 .stream()
@@ -368,8 +352,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(productId);
 
-        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
 
         res_list = order_line_list.thenCompose(lines ->
                 {
@@ -389,8 +372,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                                         names_of_keys_mod.add("order");
                                         List<String> keys_mod = new ArrayList<>();
                                         keys_mod.add(order_id);
-                                        CompletableFuture<List<String>> mod_order_line_list = modified_ordersDB.thenCompose(mod_orders -> mod_orders
-                                                .get_lines_for_keys(names_of_keys_mod, keys_mod));
+                                        CompletableFuture<List<String>> mod_order_line_list = modified_ordersDB.get_lines_for_keys(names_of_keys_mod, keys_mod);
 
                                         res = mod_order_line_list.thenApply(mod_list -> Long.parseLong(mod_list.get(mod_list.size() - 1).split(",")[0]));
                                     } else {
@@ -458,8 +440,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(userId);
 
-        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
 
         ratio = order_line_list.thenApply(lines ->
         {
@@ -495,8 +476,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(userId);
 
-        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
 
         ratio = order_line_list.thenApply(lines ->
         {
@@ -531,8 +511,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(userId);
 
-        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
 
 
         CompletableFuture<List<Pair<CompletableFuture<String>,CompletableFuture<Long>>>> pair_list= order_line_list.thenApply(lines ->
@@ -555,8 +534,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                                 List<String> keys_mod = new ArrayList<>();
                                 keys_mod.add(order_id);
 
-                                CompletableFuture<List<String>> moded_line_list = ordersDB.thenCompose(orders -> orders
-                                        .get_lines_for_keys(names_of_keys_mod,keys_mod));
+                                CompletableFuture<List<String>> moded_line_list = ordersDB.get_lines_for_keys(names_of_keys_mod,keys_mod);
 
                                 curr_amount = moded_line_list.thenApply(mod_list -> Long.parseLong(mod_list.get(mod_list.size() - 1).split(",")[0]));
 
@@ -612,8 +590,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(productId);
 
-        CompletableFuture<List<String>> order_line_list = ordersDB.thenCompose(orders -> orders
-                .get_lines_for_keys(names_of_keys,keys));
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
 
 
         CompletableFuture<List<Pair<CompletableFuture<String>,CompletableFuture<Long>>>> pair_list= order_line_list.thenApply(lines ->
@@ -636,8 +613,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                                 List<String> keys_mod = new ArrayList<>();
                                 keys_mod.add(order_id);
 
-                                CompletableFuture<List<String>> moded_line_list = ordersDB.thenCompose(orders -> orders
-                                        .get_lines_for_keys(names_of_keys_mod,keys_mod));
+                                CompletableFuture<List<String>> moded_line_list = ordersDB.get_lines_for_keys(names_of_keys_mod,keys_mod);
 
                                 curr_amount = moded_line_list.thenApply(mod_list -> Long.parseLong(mod_list.get(mod_list.size() - 1).split(",")[0]));
 

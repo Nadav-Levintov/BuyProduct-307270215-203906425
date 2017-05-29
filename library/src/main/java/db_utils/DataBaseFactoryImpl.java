@@ -42,13 +42,13 @@ public class DataBaseFactoryImpl implements DataBaseFactory {
         return this;
     }
 
-    public CompletableFuture<DataBase> build()
+    public DataBase build()
     {
-        return CompletableFuture.completedFuture(new DataBaseImpl(db_name,
+        return new DataBaseImpl(db_name,
                 num_of_keys,
                 names_of_columns,
                 futureLineStorageFactory,
-                allow_multiples));
+                allow_multiples);
     }
 
     public DataBaseFactory setDb_name(String db_name) {
