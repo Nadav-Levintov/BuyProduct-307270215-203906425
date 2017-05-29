@@ -19,12 +19,11 @@ public class BuyProductReaderImpl implements BuyProductReader {
     private final DataBase ordersDB;
     private final DataBase productsDB;
     private final DataBase modified_ordersDB;
-    private final DataBase canceled_ordersDB;
 
     @Inject
     public BuyProductReaderImpl(DataBaseFactory dataBaseFactoryCompletableFuture) {
 
-        Integer num_of_keys_ordersDB = new Integer(3);
+        Integer num_of_keys_ordersDB = 3;
 
         List<String> names_of_columns_OrdersDB = new ArrayList<>();
         names_of_columns_OrdersDB.add("order");
@@ -64,16 +63,6 @@ public class BuyProductReaderImpl implements BuyProductReader {
                 .setAllow_Multiples(Boolean.TRUE)
                 .build();
 
-        Integer num_of_keys_canceled_ordersDB = 1;
-        List<String> names_of_columns_canceled_ordersDB = new ArrayList<>();
-        names_of_columns_canceled_ordersDB.add("order");
-        this.canceled_ordersDB = dataBaseFactoryCompletableFuture
-                .setDb_name("Canceled")
-                .setNames_of_columns(names_of_columns_canceled_ordersDB)
-                .setNum_of_keys(num_of_keys_canceled_ordersDB)
-                .setAllow_Multiples(Boolean.FALSE)
-                .build();
-
     }
 
     @Override
@@ -85,7 +74,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
 
         CompletableFuture<List<String>> line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
-        CompletableFuture<Boolean> res = line_list.thenApply(lines -> lines.isEmpty());
+        CompletableFuture<Boolean> res = line_list.thenApply(List::isEmpty);
 
         return res.thenApply(r -> !r);
     }
@@ -97,11 +86,18 @@ public class BuyProductReaderImpl implements BuyProductReader {
         List<String> keys = new ArrayList<>();
         keys.add(orderId);
 
+        CompletableFuture<List<String>> line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
+        CompletableFuture<Boolean> res = line_list.thenApply(list ->
+                {
+                     if(list.isEmpty())
+                    {
+                        return Boolean.FALSE;
+                    }
+                    return Boolean.parseBoolean(list.get(0).split(",")[4]);
+                }
+        );
 
-        CompletableFuture<List<String>> line_list = canceled_ordersDB.get_lines_for_keys(names_of_keys,keys);
-        CompletableFuture<Boolean> res = line_list.thenApply(lines -> lines.isEmpty());
-
-        return res.thenApply(r -> !r);
+        return res;
     }
 
     @Override
@@ -113,7 +109,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
 
         CompletableFuture<List<String>> line_list = modified_ordersDB.get_lines_for_keys(names_of_keys,keys);
-        CompletableFuture<Boolean> res = line_list.thenApply(lines -> lines.isEmpty());
+        CompletableFuture<Boolean> res = line_list.thenApply(List::isEmpty);
 
         return res.thenApply(r -> !r);
     }
