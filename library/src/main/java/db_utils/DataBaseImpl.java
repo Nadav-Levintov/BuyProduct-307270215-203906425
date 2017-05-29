@@ -52,7 +52,7 @@ public class DataBaseImpl implements DataBase {
             Integer compare = key.compareTo(curr_key);
             if (compare == 0) {
                 String output = curr_line_val.substring(key.length());
-                list.add(output);
+                list.add(0,output);
             }
 
             return list;

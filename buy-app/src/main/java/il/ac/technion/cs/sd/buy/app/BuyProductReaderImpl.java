@@ -130,40 +130,34 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
         CompletableFuture<List<String>> mod_line_list = modified_ordersDB.get_lines_for_keys(names_of_keys,keys);
 
-        CompletableFuture<Integer> res;
+        CompletableFuture<OptionalInt> res;
         CompletableFuture<String> line;
 
-        //TODO: can we use compose to eliminate the "get()"?
-
-        try {
-            if(valid.get())
+        res = order_line_list.thenCombine(mod_line_list,(order_list,mod_order_list) ->
+        {
+            String[] order = order_list.get(0).split(",");
+            Boolean is_mod = Boolean.parseBoolean(order[3]);
+            Boolean is_canceled = Boolean.parseBoolean(order[4]);
+            Integer amount = Integer.parseInt(order[2]);
+            if(order_list.isEmpty())
             {
-                if(modified.get())
-                {
-                    line = mod_line_list.thenApply(lines -> lines.get(lines.size()-1));
-                    res = line.thenApply(l -> Integer.parseInt(l.split(",")[1]));
-                }
-                else
-                {
-                    line = order_line_list.thenApply(lines -> lines.get(lines.size()-1));
-                    res = line.thenApply(l -> Integer.parseInt(l.split(",")[2]));
-                }
-
-                if(canceled.get())
-                {
-                    res = res.thenApply(r -> r*(-1));
-                }
-
-                return res.thenApply(r -> OptionalInt.of(r));
+                return OptionalInt.empty();
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException();
-        } catch (ExecutionException e) {
-            throw new RuntimeException();
-        }
 
+            if(is_mod)
+            {
+                amount = Integer.parseInt(mod_order_list.get(mod_order_list.size()-1).split(",")[0]);
+            }
 
-        return CompletableFuture.completedFuture(OptionalInt.empty());
+            if(is_canceled)
+            {
+                amount*=-1;
+            }
+
+            return OptionalInt.of(amount);
+        });
+
+        return res;
     }
 
     @Override
@@ -176,8 +170,6 @@ public class BuyProductReaderImpl implements BuyProductReader {
         keys.add(orderId);
 
         CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
-
-        CompletableFuture<List<String>> canceled_line_list = canceled_ordersDB.get_lines_for_keys(names_of_keys,keys);
 
         CompletableFuture<List<String>> mod_line_list = modified_ordersDB.get_lines_for_keys(names_of_keys,keys);
 
@@ -199,8 +191,8 @@ public class BuyProductReaderImpl implements BuyProductReader {
                 .map(line -> res_list
                         .thenApply(list ->
                         {
-                            Boolean is_order_canceld =Boolean.parseBoolean(line.split(",")[4]);
-                            if(is_order_canceld) {
+                            Boolean is_order_canceled =Boolean.parseBoolean(line.split(",")[4]);
+                            if(is_order_canceled) {
                                 list.add(-1);
                             }
                             return list;
