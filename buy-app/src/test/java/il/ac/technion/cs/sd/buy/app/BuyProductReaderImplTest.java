@@ -18,7 +18,7 @@ public class BuyProductReaderImplTest {
     @Test
     public void isValidOrderId() throws Exception {
         Injector injector= Guice.createInjector(new MockedFutureLineStorageModule(), new DataBaseModule());
-        CompletableFuture<DataBaseFactory> dbf =CompletableFuture.completedFuture(injector.getInstance(DataBaseFactoryImpl.class));
+        DataBaseFactory dbf =injector.getInstance(DataBaseFactoryImpl.class);
         BuyProductReader buyProductReader= new BuyProductReaderImpl(dbf);
         CompletableFuture<Boolean> val1 = buyProductReader.isValidOrderId("1");
 

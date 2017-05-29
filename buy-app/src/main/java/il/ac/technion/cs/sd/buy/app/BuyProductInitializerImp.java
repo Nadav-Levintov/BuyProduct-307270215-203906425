@@ -43,14 +43,12 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         String csvOrders = csvStrings.getCsvOrders();
         String csvProducts = csvStrings.getCsvProducts();
         String csvModified = csvStrings.getCsvModified();
-        String csvCanceled = csvStrings.getCsvCanceled();
 
         System.out.println("csvOrders:\n" + csvOrders);
         System.out.println("csvProducts:\n" + csvProducts);
         System.out.println("csvModified:\n" + csvModified);
-        System.out.println("csvCanceled:\n" + csvCanceled);
 
-        createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified, csvCanceled);
+        createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified);
 
         return new CompletableFuture<>();
     }
@@ -63,18 +61,16 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         String csvOrders = csvStringsFromXml.getCsvOrders();
         String csvProducts = csvStringsFromXml.getCsvProducts();
         String csvModified = csvStringsFromXml.getCsvModified();
-        String csvCanceled = csvStringsFromXml.getCsvCanceled();
 
         System.out.println("csvOrders:\n" + csvOrders);
         System.out.println("csvProducts:\n" + csvProducts);
         System.out.println("csvModified:\n" + csvModified);
-        System.out.println("csvCanceled:\n" + csvCanceled);
 
-        return createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified, csvCanceled);
+        return createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified);
 
     }
 
-    private CompletableFuture<Void> createDataBasesFromCsvStrings(String csvOrders, String csvProducts, String csvModified, String csvCanceled) {
+    private CompletableFuture<Void> createDataBasesFromCsvStrings(String csvOrders, String csvProducts, String csvModified) {
         // build the data bases
         Integer num_of_keys = 3;
 
@@ -111,24 +107,14 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                 .setAllow_Multiples(true)
                 .build();
 
-        num_of_keys = 1;
-        List<String> names_of_columns4 = new ArrayList<>();
-        names_of_columns4.add("order");
-        DataBase canceled_ordersDB = dataBaseFactory.setNames_of_columns(names_of_columns4)
-                .setNum_of_keys(num_of_keys)
-                .setDb_name("Canceled")
-                .setAllow_Multiples(false)
-                .build();
 
         CompletableFuture<Void> order_build = ordersDB.build_db(csvOrders);
         CompletableFuture<Void> product_build = productsDB.build_db(csvProducts);
         CompletableFuture<Void> mod_build = modified_ordersDB.build_db(csvModified);
-        CompletableFuture<Void> canceled_build = canceled_ordersDB.build_db(csvCanceled);
 
         // will finish build when all build finish
         CompletableFuture<Void> order_product = order_build.thenCombine(product_build,(a,b)-> a);
-        CompletableFuture<Void> mod_cancel = mod_build.thenCombine(canceled_build,(a,b)-> a);
-        return order_product.thenCombine(mod_cancel,(a,b)-> a);
+        return order_product.thenCombine(mod_build,(a,b)-> a);
 
     }
 
@@ -137,7 +123,6 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         private String csvOrders;
         private String csvProducts;
         private String csvModified;
-        private String csvCanceled;
 
         public CsvStringsFromJson(String jsonData) {
             this.jsonData = jsonData;
@@ -155,15 +140,13 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             return csvModified;
         }
 
-        public String getCsvCanceled() {
-            return csvCanceled;
-        }
 
         public CsvStringsFromJson invoke() {
             Map<String, String> ordersMap = new TreeMap<>();
             Map<String, String> productsMap = new TreeMap<>();
             ListMultimap<String, String> modifiedOrdersMap = ArrayListMultimap.create();
             Map<String, String> canceldOrders = new TreeMap<>();
+            String csvCanceled;
 
             try {
                 JSONArray arr = new JSONArray(jsonData);
@@ -226,43 +209,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
 
             // foreach order check that product exist -> if not don put in string
             csvOrders = "";
-            for (Map.Entry<String, String> entry : ordersMap.entrySet()) {
-                String product = entry.getValue().split(",")[2];
-                if (productsMap.containsKey(product)) {
-                    csvOrders += entry.getValue();
-                    Integer modifiedAmount = 0;
-                    Integer canceled = 0;
-                    if (modifiedOrdersMap.containsKey(entry.getKey())) {
-                        modifiedAmount = modifiedOrdersMap.get(entry.getKey()).size();
-                    }
-                    if (canceldOrders.containsKey(entry.getKey())) {
-                        canceled = 1;
-                    }
-                    csvOrders += modifiedAmount.toString() + "," + canceled.toString() + "\n";
-                }
-            }
-
-            //insert Canceled orders to string
-            csvCanceled = "";
-            for (Map.Entry<String, String> entry : canceldOrders.entrySet()) {
-                csvCanceled += entry.getValue();
-            }
-
-            //insert products to string
-            csvProducts = "";
-            for (Map.Entry<String, String> entry : productsMap.entrySet()) {
-                csvProducts += entry.getValue();
-            }
-
-
-            //insert Modified orders to string
-            csvModified = "";
-            for(String key : modifiedOrdersMap.keySet()){
-                Collection<String> values = modifiedOrdersMap.get(key);
-                for (String Value : values) {
-                    csvModified += Value;
-                }
-            }
+            auxBuildCsv(ordersMap, productsMap, modifiedOrdersMap, canceldOrders, this.csvOrders, this.csvProducts, this.csvModified);
             return this;
         }
 
@@ -273,7 +220,6 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         private String csvOrders;
         private String csvProducts;
         private String csvModified;
-        private String csvCanceled;
 
         public CsvStringsFromXml(String xmlData) {
             this.xmlData = xmlData;
@@ -291,10 +237,6 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             return csvModified;
         }
 
-        public String getCsvCanceled() {
-            return csvCanceled;
-        }
-
         public CsvStringsFromXml invoke() throws ParserConfigurationException, IOException, SAXException {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
@@ -305,7 +247,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             csvOrders = new String();
             csvProducts = new String();
             csvModified = new String();
-            csvCanceled = new String();
+            String csvCanceled;
 
             Map<String, String> ordersMap = new TreeMap<>();
             Map<String, String> productsMap = new TreeMap<>();
@@ -360,7 +302,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                             csvCanceled = cOrderId + "\n";
                             // check if order exist - if not -> do nothing
                             if (ordersMap.containsKey(cOrderId)) {
-                                // insert to canceld orders set (remove old versions)
+                                // insert to canceled orders set (remove old versions)
                                 canceldOrders.put(cOrderId, csvCanceled);
                             }
 
@@ -372,48 +314,57 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             }
             // foreach order check that product exist -> if not don put in string
             csvOrders = "";
-            for (Map.Entry<String, String> entry : ordersMap.entrySet()) {
-                String product = entry.getValue().split(",")[2];
-                if (productsMap.containsKey(product)) {
-                    csvOrders += entry.getValue();
-                    Integer modifiedAmount = 0;
-                    Integer canceled = 0;
-                    if (modifiedOrdersMap.containsKey(entry.getKey())) {
-                        modifiedAmount = modifiedOrdersMap.get(entry.getKey()).size();
-                    }
-                    if (canceldOrders.containsKey(entry.getKey())) {
-                        canceled = 1;
-                    }
-                    csvOrders += modifiedAmount.toString() + "," + canceled.toString() + "\n";
-                }
-            }
-
-            //insert Canceled orders to string
-            csvCanceled = "";
-            for (Map.Entry<String, String> entry : canceldOrders.entrySet()) {
-                csvCanceled += entry.getValue();
-            }
-
-            //insert products to string
-            csvProducts = "";
-            for (Map.Entry<String, String> entry : productsMap.entrySet()) {
-                csvProducts += entry.getValue();
-            }
-
-
-            //insert Modified orders to string
-            csvModified = "";
-            for(String key : modifiedOrdersMap.keySet()){
-                Collection<String> values = modifiedOrdersMap.get(key);
-                for (String Value : values) {
-                    csvModified += Value;
-                }
-            }
+            auxBuildCsv(ordersMap, productsMap, modifiedOrdersMap, canceldOrders, this.csvOrders, this.csvProducts, this.csvModified);
 
             return this;
         }
 
     }
+
+    void auxBuildCsv(Map<String, String> ordersMap, Map<String, String> productsMap,
+                     ListMultimap<String, String> modifiedOrdersMap, Map<String, String> canceldOrders,
+                     String csvOrders, String csvProducts, String csvModified) {
+        String csvCanceled;
+        for (Map.Entry<String, String> entry : ordersMap.entrySet()) {
+            String product = entry.getValue().split(",")[2];
+            if (productsMap.containsKey(product)) {
+                csvOrders += entry.getValue();
+                Integer modifiedAmount = 0;
+                Integer canceled = 0;
+                if (modifiedOrdersMap.containsKey(entry.getKey())) {
+                    modifiedAmount = modifiedOrdersMap.get(entry.getKey()).size();
+                }
+                if (canceldOrders.containsKey(entry.getKey())) {
+                    canceled = 1;
+                }
+                csvOrders += modifiedAmount.toString() + "," + canceled.toString() + "\n";
+            }
+        }
+
+        //insert Canceled orders to string
+        csvCanceled = "";
+        for (Map.Entry<String, String> entry : canceldOrders.entrySet()) {
+            csvCanceled += entry.getValue();
+        }
+
+        //insert products to string
+        csvProducts = "";
+        for (Map.Entry<String, String> entry : productsMap.entrySet()) {
+            csvProducts += entry.getValue();
+        }
+
+
+        //insert Modified orders to string
+        csvModified = "";
+        for(String key : modifiedOrdersMap.keySet()){
+            Collection<String> values = modifiedOrdersMap.get(key);
+            for (String Value : values) {
+                csvModified += Value;
+            }
+        }
+    }
+
+
 
 }
 

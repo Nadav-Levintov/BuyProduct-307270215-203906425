@@ -71,11 +71,8 @@ public class BuyProductReaderImpl implements BuyProductReader {
         names_of_keys.add("order");
         List<String> keys = new ArrayList<>();
         keys.add(orderId);
-
-
         CompletableFuture<List<String>> line_list = ordersDB.get_lines_for_keys(names_of_keys,keys);
         CompletableFuture<Boolean> res = line_list.thenApply(List::isEmpty);
-
         return res.thenApply(r -> !r);
     }
 

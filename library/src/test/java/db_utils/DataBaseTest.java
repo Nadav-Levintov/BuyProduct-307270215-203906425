@@ -24,7 +24,7 @@ public class DataBaseTest {
 //    @Rule
 //    public Timeout globalTimeout = Timeout.seconds(30);
 
-    public DataBase SetupAndBuildDataBase(Integer num_of_keys,List<String> names_of_columns,String csv_data)
+    public DataBase SetupAndBuildDataBase(Integer num_of_keys,List<String> names_of_columns,String csv_data, Boolean allowMultipuls)
     {
 
         Injector injector= Guice.createInjector(new MockedFutureLineStorageModule());
@@ -34,6 +34,7 @@ public class DataBaseTest {
         DB = dataBaseFactoryMock.setNames_of_columns(names_of_columns)
                 .setNum_of_keys(num_of_keys)
                 .setDb_name("Testing")
+                .setAllow_Multiples(allowMultipuls)
                 .build();
 
         DB.build_db(csv_data);
@@ -57,24 +58,25 @@ public class DataBaseTest {
                 "Benny,Harry,9\n" +
                 "Benny,Bla,8\n";
 
-        CompletableFuture<DataBase> DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv);
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv, false);
 
-        CompletableFuture<Integer> val1= DB.thenApply(db -> db.getNum_of_keys());
-        CompletableFuture<Integer> val2= DB.thenApply(db -> db.getNum_of_columns());
-        CompletableFuture<List<String>> val3= DB.thenApply(db -> db.getNames_of_columns());
-        CompletableFuture<OptionalInt> val4= DB.thenApply(db -> db.get_num_of_column("Reviewer"));
-        CompletableFuture<OptionalInt> val5= DB.thenApply(db -> db.get_num_of_column("Book"));
-        CompletableFuture<OptionalInt> val6= DB.thenApply(db -> db.get_num_of_column("Score"));
-        CompletableFuture<OptionalInt> val7= DB.thenApply(db -> db.get_num_of_column("Bla"));
+        Integer val1= DB.getNum_of_keys();
+
+        Optional<Integer> val2= Optional.ofNullable(DB.getNum_of_columns());
+        List<String> val3= DB.getNames_of_columns();
+        OptionalInt val4= DB.get_num_of_column("Reviewer");
+        OptionalInt val5= DB.get_num_of_column("Book");
+        OptionalInt val6= DB.get_num_of_column("Score");
+        OptionalInt val7= DB.get_num_of_column("Bla");
 
 
-        assertEquals(num_of_keys,val1.get());
+        assertEquals(num_of_keys,val1);
         assertEquals(OptionalInt.of(names_of_columns.size()),OptionalInt.of(val2.get()));
-        assertEquals(names_of_columns,val3.get());
-        assertEquals(OptionalInt.of(0),val4.get());
-        assertEquals(OptionalInt.of(1),val5.get());
-        assertEquals(OptionalInt.of(2),val6.get());
-        assertEquals(OptionalInt.empty(),val7.get());
+        assertEquals(names_of_columns,val3);
+        assertEquals(OptionalInt.of(0),val4);
+        assertEquals(OptionalInt.of(1),val5);
+        assertEquals(OptionalInt.of(2),val6);
+        assertEquals(OptionalInt.empty(),val7);
 
     }
 
@@ -94,7 +96,7 @@ public class DataBaseTest {
                 "Benny,Harry,9\n" +
                 "Benny,Bla,8\n";
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv).get();
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv, false);
 
         assertEquals(num_of_keys,DB.getNum_of_keys());
         assertEquals(OptionalInt.of(names_of_columns.size()),OptionalInt.of(DB.getNum_of_columns()));
@@ -122,7 +124,7 @@ public class DataBaseTest {
                 "Benny,Harry,9,d\n" +
                 "Benny,Bla,8,e\n";
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv).get();
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv, false);
 
         assertEquals(num_of_keys,DB.getNum_of_keys());
         assertEquals(OptionalInt.of(names_of_columns.size()),OptionalInt.of(DB.getNum_of_columns()));
@@ -151,7 +153,7 @@ public class DataBaseTest {
                 "Benny,Harry,9\n" +
                 "Benny,Bla,8\n";
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv).get();
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv, false);
         List<String> keys1 = new ArrayList<>();
         keys1.add("Nadav");
         List<String> keys2 = new ArrayList<>();
@@ -187,7 +189,7 @@ public class DataBaseTest {
                 "Benny,Harry,9\n" +
                 "Benny,Bla,8\n";
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv).get();
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv,false);
         List<String> keys1 = new ArrayList<>();
         keys1.add("Nadav");
         keys1.add("Harry");
@@ -222,7 +224,7 @@ public class DataBaseTest {
                 "Benny,Harry,9,d\n" +
                 "Benny,Bla,8,e\n";
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv).get();
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv, false);
         List<String> keys1 = new ArrayList<>();
         keys1.add("Nadav");
         keys1.add("Harry");
@@ -253,7 +255,7 @@ public class DataBaseTest {
         assertEquals(Optional.of("b"),val5.get());
 
     }
-
+/*
     @Test
     public void get_lines_for_key() throws Exception {
     }
@@ -469,5 +471,5 @@ public class DataBaseTest {
 
     }
 
-
+*/
 }

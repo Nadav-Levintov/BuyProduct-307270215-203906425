@@ -6,6 +6,7 @@ package db_utils;
 import com.google.common.collect.ArrayListMultimap;
 import il.ac.technion.cs.sd.buy.ext.FutureLineStorage;
 import il.ac.technion.cs.sd.buy.ext.FutureLineStorageFactory;
+import il.ac.technion.cs.sd.buy.ext.LineStorageModule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +31,7 @@ public class DataBaseImpl implements DataBase {
                                                                                     final String key,
                                                                                     final List<String> keysList,
                                                                                     final Integer index,
-                                                                                    final Integer number_of_lines)
-    {
+                                                                                    final Integer number_of_lines) throws InterruptedException {
         if(index > number_of_lines)
         {
             return CompletableFuture.completedFuture(new ArrayList<String>());
@@ -77,6 +77,8 @@ public class DataBaseImpl implements DataBase {
     {
 
         CompletableFuture<FutureLineStorage> lineStorage = futureLineStorageFactory.open(fileName);
+
+        multiMap.keySet().
         for (String key : multiMap.keySet())
         {
             List<String> values = multiMap.get(key);
@@ -123,7 +125,14 @@ public class DataBaseImpl implements DataBase {
 
         CompletableFuture<String> curr_line;
         Integer mid = low +(high - low)/2;
-        curr_line = lineStorageCompletableFuture.thenCompose(ls -> ls.read(mid));
+        curr_line = lineStorageCompletableFuture.thenCompose(ls -> {
+            try {
+                return ls.read(mid);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return CompletableFuture.completedFuture("");
+        });
         return curr_line.thenCompose(line ->
         {
             String[] values = line.split(",");
@@ -135,15 +144,21 @@ public class DataBaseImpl implements DataBase {
         });
     }
 
-    private CompletableFuture<Integer> find_index_in_file(String key, Integer keys_amount, CompletableFuture<FutureLineStorage> lineStorage) {
+    private CompletableFuture<Integer> find_index_in_file(String key, Integer keys_amount, CompletableFuture<FutureLineStorage> lineStorage){
 
         CompletableFuture<Integer> low=CompletableFuture.completedFuture(0);
         CompletableFuture<Integer> high, found_line_num;
-        CompletableFuture<Integer> numberOfLines;
 
-
-        numberOfLines = lineStorage.thenCompose(FutureLineStorage::numberOfLines);
-
+        CompletableFuture<Integer> numberOfLines = null;
+        numberOfLines  = lineStorage.thenCompose(lStorage -> {
+            CompletableFuture<Integer> lines= CompletableFuture.completedFuture(0);
+            try {
+                lines = lStorage.numberOfLines();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return lines;
+        });
 
         high = numberOfLines.thenApply(val -> val-1);
 
@@ -237,9 +252,13 @@ public class DataBaseImpl implements DataBase {
 
         return res.thenCompose(curr_index ->
         {
-            CompletableFuture<String> curr_line;
+            CompletableFuture<String> curr_line = CompletableFuture.completedFuture("");
             curr_index--;
-            curr_line = lineStorage.read(curr_index);
+            try {
+                curr_line = lineStorage.read(curr_index);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             CompletableFuture<String> curr_key = curr_line.thenApply(curr_line_str -> create_string_seperated_with_comma(curr_line_str.split(","), keysList.size()));
 
             CompletableFuture<Integer> compare = curr_key.thenApply(key::compareTo);
@@ -310,7 +329,14 @@ public class DataBaseImpl implements DataBase {
             {
                 CompletableFuture<String> curr_line;
                 CompletableFuture<String> val;
-                curr_line = lineStorage.thenCompose(ls -> ls.read(row_number_val));
+                curr_line = lineStorage.thenCompose(ls -> {
+                    try {
+                        return ls.read(row_number_val);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    return CompletableFuture.completedFuture("");
+                });
                 val = curr_line.thenApply(curr_line_val ->
                 {
                     String[] arr = curr_line_val.split(",");
@@ -352,7 +378,15 @@ public class DataBaseImpl implements DataBase {
 
         final String final_key = key.toString();
 
-        CompletableFuture<Integer> numberOfLines = futureLineStorage.thenCompose(FutureLineStorage::numberOfLines);
+        CompletableFuture<Integer> numberOfLines = futureLineStorage.thenCompose(futureLineStorage1 -> {
+            CompletableFuture<Integer> lines = CompletableFuture.completedFuture(0);
+            try {
+                lines =  futureLineStorage1.numberOfLines();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return lines;
+        });
 
 
         //here have the key to search
@@ -364,7 +398,15 @@ public class DataBaseImpl implements DataBase {
 
         //here it copies all the rows with the right key from the first
         return futureLineStorage.thenCombine(index,(lineStorage, index_val) ->
-                numberOfLines.thenCompose(numberOfLines_val -> get_lines_with_key_starting_from_index(lineStorage,final_key,keysList,index_val,numberOfLines_val))).thenCompose(i->i);
+                numberOfLines.thenCompose(numberOfLines_val -> {
+                    try {
+                        return get_lines_with_key_starting_from_index(lineStorage, final_key, keysList, index_val, numberOfLines_val);
+                    } catch (InterruptedException e) {
+                        System.out.println("error: DataBaseImp -> function: get_lines_for_keys\n");
+                        e.printStackTrace();
+                    }
+                    return CompletableFuture.completedFuture(new ArrayList<>());
+                })).thenCompose(i->i);
     }
 
     public String getDb_name() {

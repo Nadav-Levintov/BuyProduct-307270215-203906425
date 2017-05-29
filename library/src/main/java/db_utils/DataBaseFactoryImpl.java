@@ -22,7 +22,7 @@ public class DataBaseFactoryImpl implements DataBaseFactory {
         names_of_columns = null;
         num_of_keys = null;
         db_name = null;
-        allow_multiples = null;
+        allow_multiples = false;
     }
 
 
