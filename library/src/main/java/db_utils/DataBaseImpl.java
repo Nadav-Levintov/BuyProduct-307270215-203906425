@@ -7,11 +7,9 @@ import com.google.common.collect.ArrayListMultimap;
 import il.ac.technion.cs.sd.buy.ext.FutureLineStorage;
 import il.ac.technion.cs.sd.buy.ext.FutureLineStorageFactory;
 import il.ac.technion.cs.sd.buy.ext.LineStorageModule;
+import javafx.collections.transformation.SortedList;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -78,8 +76,10 @@ public class DataBaseImpl implements DataBase {
 
         CompletableFuture<FutureLineStorage> lineStorage = futureLineStorageFactory.open(fileName);
 
-        multiMap.keySet().
-        for (String key : multiMap.keySet())
+        List<String> sortedKeys = new ArrayList<>();
+        sortedKeys.addAll(multiMap.keySet());
+        Collections.sort(sortedKeys);
+        for (String key : sortedKeys)
         {
             List<String> values = multiMap.get(key);
             if(this.allow_multiples)
