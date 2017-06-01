@@ -259,7 +259,7 @@ public class DataBaseTest {
     @Test
     public void get_lines_for_key() throws Exception {
     }
-/*
+
     @Test
     public void get_val_from_column_by_column_number_2_keys() throws Exception {
 
@@ -277,13 +277,14 @@ public class DataBaseTest {
                 "Benny,Harry,9\n" +
                 "Benny,Bla,8\n";
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv).get();
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv,false);
         List<String> keys1 = new ArrayList<>();
         keys1.add("Nadav");
         keys1.add("Harry");
         List<String> keys2 = new ArrayList<>();
         keys2.add("Nadav");
         keys2.add("Bible");
+
         CompletableFuture<Optional<String>> val1 = DB.get_val_from_column_by_column_number(keys1,2);
         CompletableFuture<Optional<String>> val2 = DB.get_val_from_column_by_column_number(keys2,2);
         CompletableFuture<Optional<String>> val3 = DB.get_val_from_column_by_column_number(keys2,3);
@@ -295,7 +296,7 @@ public class DataBaseTest {
         assertEquals(Optional.empty(),val3.get());
         assertEquals(Optional.empty(),val4.get());
     }
-
+/*
     @Test
     public void get_lines_for_keys_3_keys() throws Exception{
         Integer num_of_keys=3;
@@ -313,7 +314,7 @@ public class DataBaseTest {
                 "Benny,Harry,8,a\n" +
                 "Benny,Bla,8,e\n";
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv).get();
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv,false);
         List<String> values = new ArrayList<>();
         List<String> keysName = new ArrayList<>();
         List<String> keys = new ArrayList<>();
