@@ -31,12 +31,18 @@ public class MockFutureLineStorageFactory implements FutureLineStorageFactory {
             file = file_list.get(0);
         }
 
-        try {
-            TimeUnit.MILLISECONDS.sleep(files.size()*100);
-        } catch (InterruptedException e) {
-            throw new RuntimeException();
-        }
+        CompletableFuture<FutureLineStorage> res =  CompletableFuture.completedFuture(file);
+        res.thenApply(val ->
+        {
+            try {
+                TimeUnit.MILLISECONDS.sleep(files.size()*100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException();
+            }
+            return val;
+        });
 
-        return CompletableFuture.completedFuture(file);
+
+        return res;
     }
 }
