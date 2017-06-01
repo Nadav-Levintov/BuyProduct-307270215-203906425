@@ -27,8 +27,8 @@ public class DataBaseImpl implements DataBase {
                                                                                     final String key,
                                                                                     final List<String> keysList,
                                                                                     final Integer index,
-                                                                                    final Integer number_of_lines) throws InterruptedException {
-        if(index > number_of_lines)
+                                                                                    final Integer number_of_lines) {
+        if(index >= number_of_lines)
         {
             return CompletableFuture.completedFuture(new ArrayList<String>());
         }
@@ -234,7 +234,6 @@ public class DataBaseImpl implements DataBase {
 
         return res.thenCompose(curr_index ->
         {
-            curr_index--;
             CompletableFuture<String> curr_key = lineStorage.read(curr_index).thenApply(curr_line_str -> create_string_separated_with_comma(curr_line_str.split(","), keysList.size()));
 
             CompletableFuture<Integer> compare = curr_key.thenApply(key::compareTo);
@@ -360,15 +359,7 @@ public class DataBaseImpl implements DataBase {
 
         //here it copies all the rows with the right key from the first
         return futureLineStorage.thenCombine(index,(lineStorage, index_val) ->
-                numberOfLines.thenCompose(numberOfLines_val -> {
-                    try {
-                        return get_lines_with_key_starting_from_index(lineStorage, final_key, keysList, index_val, numberOfLines_val);
-                    } catch (InterruptedException e) {
-                        System.out.println("error: DataBaseImp -> function: get_lines_for_keys\n");
-                        e.printStackTrace();
-                    }
-                    return CompletableFuture.completedFuture(new ArrayList<>());
-                })).thenCompose(i->i);
+                numberOfLines.thenCompose(numberOfLines_val -> get_lines_with_key_starting_from_index(lineStorage, final_key, keysList, index_val, numberOfLines_val))).thenCompose(i->i);
     }
 
     public String getDb_name() {

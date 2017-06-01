@@ -296,7 +296,7 @@ public class DataBaseTest {
         assertEquals(Optional.empty(),val3.get());
         assertEquals(Optional.empty(),val4.get());
     }
-/*
+
     @Test
     public void get_lines_for_keys_3_keys() throws Exception{
         Integer num_of_keys=3;
@@ -325,8 +325,8 @@ public class DataBaseTest {
         keys.add("Harry");
         values.addAll(DB.get_lines_for_keys(keysName,keys).get());
 
-        assertEquals(values.get(0), "8,a");
-        assertEquals(values.get(1), "9,d");
+        assertEquals("8,a",values.get(0));
+        assertEquals("9,d",values.get(1));
 
 
         //check if no such entry found
@@ -372,7 +372,7 @@ public class DataBaseTest {
                 "Harry3,8\n" +
                 "Bla5,8\n";
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv).get();
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv,false);
         List<String> values = new ArrayList<>();
         List<String> keysName = new ArrayList<>();
         List<String> keys = new ArrayList<>();
@@ -429,7 +429,7 @@ public class DataBaseTest {
                 "Benny,Harry,8\n" +
                 "Benny,Bla,8\n";
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv).get();
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv,false);
         List<String> values = new ArrayList<>();
         List<String> keysName = new ArrayList<>();
         List<String> keys = new ArrayList<>();
@@ -472,5 +472,5 @@ public class DataBaseTest {
 
     }
 
-*/
+
 }

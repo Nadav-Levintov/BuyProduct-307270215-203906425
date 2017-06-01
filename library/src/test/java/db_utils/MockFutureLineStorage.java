@@ -28,22 +28,36 @@ public class MockFutureLineStorage implements FutureLineStorage {
 
     @Override
     public CompletableFuture<String> read(int i) {
-        try {
-            TimeUnit.MILLISECONDS.sleep(mockedFile.get(i).length());
-        } catch (InterruptedException e) {
-            throw new RuntimeException();
-        }
-        return CompletableFuture.completedFuture(mockedFile.get(i));
+
+        CompletableFuture<String> res = CompletableFuture.completedFuture(mockedFile.get(i));
+        res.thenApply(str ->
+        {
+            try {
+                TimeUnit.MILLISECONDS.sleep(mockedFile.get(i).length());
+            } catch (InterruptedException e) {
+                throw new RuntimeException();
+            }
+            return str;
+        });
+
+        return res;
     }
 
     @Override
     public CompletableFuture<Integer> numberOfLines() {
-        try {
-            TimeUnit.MILLISECONDS.sleep(100);
-        } catch (InterruptedException e) {
-            throw new RuntimeException();
-        }
-        return CompletableFuture.completedFuture(mockedFile.size());
+        CompletableFuture<Integer> res =CompletableFuture.completedFuture(mockedFile.size());
+        res.thenApply(val ->
+                {
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(100);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException();
+                    }
+             return val;
+                }
+        );
+
+        return res;
     }
 
     public String getMockedFileName() {
