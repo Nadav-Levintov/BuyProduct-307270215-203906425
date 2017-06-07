@@ -27,11 +27,11 @@ import java.util.concurrent.ExecutionException;
 /**
  * Created by benny on 24/05/2017.
  */
-public class BuyProductInitializerImp implements BuyProductInitializer {
+public class BuyProductInitializerImpl implements BuyProductInitializer {
     protected DataBaseFactory dataBaseFactory;
 
     @Inject
-    public BuyProductInitializerImp(DataBaseFactory dataBaseFactory) {
+    public BuyProductInitializerImpl(DataBaseFactory dataBaseFactory) {
 
         this.dataBaseFactory = dataBaseFactory;
     }

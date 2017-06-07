@@ -19,18 +19,9 @@ public class BuyProductReaderImpl implements BuyProductReader {
     private final DataBase modified_ordersDB;
 
     /* Private Methods */
-    private CompletableFuture<List<String>> get_orders_with_key_from_db(String key_id,String key_column,DataBase db) {
-
-        List<String> names_of_keys = new ArrayList<>();
-        names_of_keys.add(key_column);
-        List<String> keys = new ArrayList<>();
-        keys.add(key_id);
-
-        return db.get_lines_for_keys(names_of_keys,keys);
-    }
 
     private CompletableFuture<Boolean> does_db_contains_order_id(String orderId, DataBase db) {
-        CompletableFuture<List<String>> line_list = get_orders_with_key_from_db(orderId,"order",db);
+        CompletableFuture<List<String>> line_list = db.get_lines_for_single_key(orderId,"order");
 
         return line_list.thenApply(List::isEmpty).thenApply(r -> !r);
     }
@@ -51,7 +42,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                         if (!is_canceled) {
                             if(is_moded)
                             {
-                                CompletableFuture<List<String>> moded_line_list = get_orders_with_key_from_db(order_id,"order",modified_ordersDB);
+                                CompletableFuture<List<String>> moded_line_list = modified_ordersDB.get_lines_for_single_key(order_id,"order");
 
                                 curr_amount = moded_line_list.thenApply(mod_list -> Long.parseLong(mod_list.get(mod_list.size() - 1).split(",")[0]));
 
@@ -148,7 +139,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Override
     public CompletableFuture<Boolean> isCanceledOrder(String orderId) {
 
-        CompletableFuture<List<String>> line_list = get_orders_with_key_from_db(orderId, "order",ordersDB);
+        CompletableFuture<List<String>> line_list = ordersDB.get_lines_for_single_key(orderId, "order");
 
         return line_list.thenApply(list ->
                 {
@@ -169,9 +160,9 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Override
     public CompletableFuture<OptionalInt> getNumberOfProductOrdered(String orderId) {
 
-        CompletableFuture<List<String>> order_line_list = get_orders_with_key_from_db(orderId,"order",ordersDB);
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(orderId, "order");
 
-        CompletableFuture<List<String>> mod_line_list = get_orders_with_key_from_db(orderId,"order",modified_ordersDB);
+        CompletableFuture<List<String>> mod_line_list = modified_ordersDB.get_lines_for_single_key(orderId, "order");
 
         return order_line_list.thenCombine(mod_line_list,(order_list,mod_order_list) ->
         {
@@ -203,9 +194,9 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
         CompletableFuture<List<Integer>> res_list = CompletableFuture.completedFuture(new ArrayList<>());
 
-        CompletableFuture<List<String>> order_line_list = get_orders_with_key_from_db(orderId,"order",ordersDB);
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(orderId, "order");
 
-        CompletableFuture<List<String>> mod_line_list = get_orders_with_key_from_db(orderId,"order",modified_ordersDB);
+        CompletableFuture<List<String>> mod_line_list = modified_ordersDB.get_lines_for_single_key(orderId, "order");
 
         order_line_list.thenApply(lines -> lines
                 .stream()
@@ -237,7 +228,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Override
     public CompletableFuture<List<String>> getOrderIdsForUser(String userId) {
 
-        CompletableFuture<List<String>> order_line_list = get_orders_with_key_from_db(userId,"user",ordersDB);
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(userId,"user");
 
         return order_line_list.thenApply(lines -> lines
                 .stream()
@@ -250,7 +241,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Override
     public CompletableFuture<Long> getTotalAmountSpentByUser(String userId) {
 
-        CompletableFuture<List<String>> future_orders_list =  get_orders_with_key_from_db(userId,"user",ordersDB);
+        CompletableFuture<List<String>> future_orders_list =  ordersDB.get_lines_for_single_key(userId,"user");
 
 
         CompletableFuture<List<Integer>> transactions_prices = future_orders_list.thenCompose(orders_list ->
@@ -274,7 +265,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                 {
                     if(is_modified)
                     {
-                        amount= get_orders_with_key_from_db(order_id,"order",modified_ordersDB).thenApply(modified_lines ->
+                        amount= modified_ordersDB.get_lines_for_single_key(order_id,"order").thenApply(modified_lines ->
                                 modified_lines.get(modified_lines.size()-1).split(",")[0]).thenApply(Integer::parseInt);
                     }
                 }
@@ -294,7 +285,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
     @Override
     public CompletableFuture<List<String>> getUsersThatPurchased(String productId) {
-        CompletableFuture<List<String>> order_line_list = get_orders_with_key_from_db(productId,"product",ordersDB);
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(productId,"product");
 
         return order_line_list.thenApply(lines -> lines.stream()
         .map(line ->{
@@ -317,7 +308,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Override
     public CompletableFuture<List<String>> getOrderIdsThatPurchased(String productId) {
 
-        CompletableFuture<List<String>> order_line_list = get_orders_with_key_from_db(productId,"product",ordersDB);
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(productId,"product");
 
         return order_line_list.thenApply(lines -> lines
                 .stream()
@@ -334,7 +325,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         CompletableFuture<List<Long>> res_list;
         CompletableFuture<Long> sum;
 
-        CompletableFuture<List<String>> order_line_list = get_orders_with_key_from_db(productId,"product",ordersDB);
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(productId,"product");
 
         res_list = order_line_list.thenCompose(lines ->
                 {
@@ -351,7 +342,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                                 if (!is_canceled) {
                                     if (is_modified) {
 
-                                        CompletableFuture<List<String>> mod_order_line_list = get_orders_with_key_from_db(order_id,"order",modified_ordersDB);
+                                        CompletableFuture<List<String>> mod_order_line_list = modified_ordersDB.get_lines_for_single_key(order_id,"order");
 
                                         res = mod_order_line_list.thenApply(mod_list -> Long.parseLong(mod_list.get(mod_list.size() - 1).split(",")[0]));
                                     } else {
@@ -407,7 +398,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
     @Override
     public CompletableFuture<OptionalDouble> getCancelRatioForUser(String userId) {
-        CompletableFuture<List<String>> order_line_list = get_orders_with_key_from_db(userId,"user",ordersDB);
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(userId,"user");
 
         return order_line_list.thenApply(lines ->
         {
@@ -435,7 +426,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Override
     public CompletableFuture<OptionalDouble> getModifyRatioForUser(String userId) {
 
-        CompletableFuture<List<String>> order_line_list = get_orders_with_key_from_db(userId,"user",ordersDB);
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(userId,"user");
 
         return order_line_list.thenApply(lines ->
         {
@@ -462,7 +453,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Override
     public CompletableFuture<Map<String, Long>> getAllItemsPurchased(String userId) {
 
-        CompletableFuture<List<String>> order_line_list = get_orders_with_key_from_db(userId,"user",ordersDB);
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(userId,"user");
 
         return get_items_map_from_order_list(order_line_list);
     }
@@ -470,7 +461,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Override
     public CompletableFuture<Map<String, Long>> getItemsPurchasedByUsers(String productId) {
 
-        CompletableFuture<List<String>> order_line_list = get_orders_with_key_from_db(productId, "product", ordersDB);
+        CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(productId, "product");
 
         return get_items_map_from_order_list(order_line_list);
     }

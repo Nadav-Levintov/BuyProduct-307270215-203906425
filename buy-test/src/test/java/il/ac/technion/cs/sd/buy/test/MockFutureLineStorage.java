@@ -27,7 +27,7 @@ public class MockFutureLineStorage implements FutureLineStorage {
     }
 
     @Override
-    public CompletableFuture<String> read(int i) throws InterruptedException {
+    public CompletableFuture<String> read(int i) {
         try {
             TimeUnit.MILLISECONDS.sleep(mockedFile.get(i).length());
         } catch (InterruptedException e) {
@@ -37,7 +37,7 @@ public class MockFutureLineStorage implements FutureLineStorage {
     }
 
     @Override
-    public CompletableFuture<Integer> numberOfLines() throws InterruptedException {
+    public CompletableFuture<Integer> numberOfLines() {
         try {
             TimeUnit.MILLISECONDS.sleep(100);
         } catch (InterruptedException e) {

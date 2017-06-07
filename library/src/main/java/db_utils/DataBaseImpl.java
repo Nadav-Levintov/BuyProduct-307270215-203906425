@@ -327,7 +327,7 @@ public class DataBaseImpl implements DataBase {
     }
 
 
-    public CompletableFuture<List<String>> get_lines_for_keys(List<String> keysNameList, List<String> keysList) {
+    public CompletableFuture<List<String>> get_lines_for_keys(List<String> keysList, List<String> keysNameList) {
 
         get_lines_for_key_parameter_check(keysNameList, keysList);
 
@@ -397,6 +397,6 @@ public class DataBaseImpl implements DataBase {
         List<String> keys = new ArrayList<>();
         keys.add(key);
 
-        return this.get_lines_for_keys(names_of_keys,keys);
+        return this.get_lines_for_keys(keys,names_of_keys);
     }
 }

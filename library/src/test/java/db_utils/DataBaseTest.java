@@ -322,7 +322,7 @@ public class DataBaseTest {
         keysName.add("Book");
         keys.add("Benny");
         keys.add("Harry");
-        values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+        values.addAll(DB.get_lines_for_keys(keys,keysName).get());
 
         assertEquals("8,a",values.get(0));
         assertEquals("9,d",values.get(1));
@@ -333,19 +333,19 @@ public class DataBaseTest {
         List<String> keys2 = new ArrayList<>();
         keys2.add("Benny");
         keys2.add("80 days");
-        empty_values.addAll(DB.get_lines_for_keys(keysName,keys2).get());
+        empty_values.addAll(DB.get_lines_for_keys(keys2,keysName).get());
         assertTrue(empty_values.size()==0);
 
 
         keys.add("Benny");
 
         try{        //check different array size
-            values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
         }catch(IllegalArgumentException e){}
 
         keysName.add("NoSuchKey");
         try{        //check that keys name are legal
-            values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
         }catch(IllegalArgumentException e){}
         keysName.remove("NoSuchKey");
 
@@ -353,7 +353,7 @@ public class DataBaseTest {
 
 
         try{        //check that there are to meny keys
-            values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
         }catch(IllegalArgumentException e){}
 
     }
@@ -380,7 +380,7 @@ public class DataBaseTest {
 
         keysName.add("Book");
         keys.add("Harry");
-        values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+        values.addAll(DB.get_lines_for_keys(keys,keysName).get());
 
         assertEquals("9", values.get(0));
 
@@ -389,21 +389,21 @@ public class DataBaseTest {
         List<String> empty_values = new ArrayList<>();
         List<String> keys2 = new ArrayList<>();
         keys2.add("NoSuchKey");
-        empty_values.addAll(DB.get_lines_for_keys(keysName,keys2).get());
+        empty_values.addAll(DB.get_lines_for_keys(keys2,keysName).get());
         assertTrue(empty_values.size()==0);
 
 
         keys.remove("Harry");
 
         try{        //check different array size
-            values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
         }catch(IllegalArgumentException e){}
 
         keysName.remove("Book");
         keysName.add("NoSuchKeyName");
         keys.add("Harry");
         try{        //check that keys name are legal
-            values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
         }catch(IllegalArgumentException e){}
 
         keysName.remove("NoSuchKey");
@@ -411,7 +411,7 @@ public class DataBaseTest {
 
 
         try{        //check that there are to meany keys
-            values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
         }catch(IllegalArgumentException e){}
 
     }
@@ -439,7 +439,7 @@ public class DataBaseTest {
 
         keysName.add("Reviewer");
         keys.add("Benny");
-        values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+        values.addAll(DB.get_lines_for_keys(keys,keysName).get());
 
         assertEquals(values.get(0), "Bla,8");
         assertEquals(values.get(1), "Harry,8");
@@ -450,19 +450,19 @@ public class DataBaseTest {
         List<String> empty_values = new ArrayList<>();
         List<String> keys2 = new ArrayList<>();
         keys2.add("NoSuchKey");
-        empty_values.addAll(DB.get_lines_for_keys(keysName,keys2).get());
+        empty_values.addAll(DB.get_lines_for_keys(keys2,keysName).get());
         assertTrue(empty_values.size()==0);
 
 
         keys.add("Benny");
 
         try{        //check different array size
-            values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
         }catch(IllegalArgumentException e){}
 
         keysName.add("NoSuchKeyName");
         try{        //check that keys name are legal
-            values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
         }catch(IllegalArgumentException e){}
         keysName.remove("NoSuchKey");
 
@@ -470,7 +470,7 @@ public class DataBaseTest {
 
 
         try{        //check that there are to meany keys
-            values.addAll(DB.get_lines_for_keys(keysName,keys).get());
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
         }catch(IllegalArgumentException e){}
 
     }

@@ -54,10 +54,10 @@ public class ExampleTest {
   @Test
   public void testSimpleJson() throws Exception {
     Injector injector = setupAndGetInjector("small.json");
-/*
+
     BuyProductReader reader = injector.getInstance(BuyProductReader.class);
     assertEquals(2 * 1000 + 5 * 100 + 100 * 1, reader.getTotalAmountSpentByUser("1").get().intValue());
-*/
+
   }
 
   @Test
