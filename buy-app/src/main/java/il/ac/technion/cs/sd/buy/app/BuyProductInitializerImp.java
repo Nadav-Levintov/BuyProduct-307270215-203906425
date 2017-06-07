@@ -6,6 +6,7 @@ import db_utils.DataBase;
 import db_utils.DataBaseFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -39,38 +40,30 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
     public CompletableFuture<Void> setupJson(String jsonData) {
 
         // create the csv string from json string
-        CsvStringsFromJson csvStrings = new CsvStringsFromJson(jsonData).invoke();
-        String csvOrders = csvStrings.getCsvOrders();
-        String csvProducts = csvStrings.getCsvProducts();
-        String csvModified = csvStrings.getCsvModified();
+        DataListsFromJson dataLists = new DataListsFromJson(jsonData).invoke();
 
-        System.out.println("csvOrders:\n" + csvOrders);
-        System.out.println("csvProducts:\n" + csvProducts);
-        System.out.println("csvModified:\n" + csvModified);
+        List<String> ordersList = dataLists.getOrdersList();
+        List<String> productsList = dataLists.getProductsList();
+        List<String> modifiedList = dataLists.getModifiedList();
 
-        createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified);
+        return createDataBasesFromLists(ordersList, productsList, modifiedList);
 
-        return new CompletableFuture<>();
     }
 
     @Override
     public CompletableFuture<Void> setupXml(String xmlData) throws ParserConfigurationException, IOException, SAXException {
 
 
-        CsvStringsFromXml csvStringsFromXml = new CsvStringsFromXml(xmlData).invoke();
-        String csvOrders = csvStringsFromXml.getCsvOrders();
-        String csvProducts = csvStringsFromXml.getCsvProducts();
-        String csvModified = csvStringsFromXml.getCsvModified();
+        DataListsFromXml dataLists = new DataListsFromXml(xmlData).invoke();
 
-        System.out.println("csvOrders:\n" + csvOrders);
-        System.out.println("csvProducts:\n" + csvProducts);
-        System.out.println("csvModified:\n" + csvModified);
+        List<String> ordersList = dataLists.getOrdersList();
+        List<String> productsList = dataLists.getProductsList();
+        List<String> modifiedList = dataLists.getModifiedList();
 
-        return createDataBasesFromCsvStrings(csvOrders, csvProducts, csvModified);
-
+        return createDataBasesFromLists(ordersList, productsList, modifiedList);
     }
 
-    private CompletableFuture<Void> createDataBasesFromCsvStrings(String csvOrders, String csvProducts, String csvModified) {
+    private CompletableFuture<Void> createDataBasesFromLists(LinkedList<String> ordersList, LinkedList<String>  productsList, LinkedList<String>  modifiedList) {
         // build the data bases
         Integer num_of_keys = 3;
 
@@ -108,9 +101,9 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                 .build();
 
 
-        CompletableFuture<Void> order_build = ordersDB.build_db(csvOrders);
-        CompletableFuture<Void> product_build = productsDB.build_db(csvProducts);
-        CompletableFuture<Void> mod_build = modified_ordersDB.build_db(csvModified);
+        CompletableFuture<Void> order_build = ordersDB.build_db(ordersList);
+        CompletableFuture<Void> product_build = productsDB.build_db(productsList);
+        CompletableFuture<Void> mod_build = modified_ordersDB.build_db(modifiedList);
 
         // will finish build when all build finish
         CompletableFuture<Void> order_product = order_build.thenCombine(product_build,(a,b)-> a);
@@ -118,83 +111,88 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
 
     }
 
-    private class CsvStringsFromJson {
+    private class DataListsFromJson {
         private String jsonData;
-        private String csvOrders;
-        private String csvProducts;
-        private String csvModified;
+        private LinkedList<String> ordersList;
+        private LinkedList<String> productsList;
+        private LinkedList<String> modifiedList;
 
-        public CsvStringsFromJson(String jsonData) {
+
+        public DataListsFromJson(String jsonData) {
             this.jsonData = jsonData;
         }
 
-        public String getCsvOrders() {
-            return csvOrders;
+        public LinkedList<String> getOrdersList() {
+            return ordersList;
         }
 
-        public String getCsvProducts() {
-            return csvProducts;
+        public LinkedList<String> getProductsList() {
+            return productsList;
         }
 
-        public String getCsvModified() {
-            return csvModified;
-        }
+        public LinkedList<String> getModifiedList() { return modifiedList; }
 
 
-        public CsvStringsFromJson invoke() {
+        public DataListsFromJson invoke() {
             Map<String, String> ordersMap = new TreeMap<>();
             Map<String, String> productsMap = new TreeMap<>();
             ListMultimap<String, String> modifiedOrdersMap = ArrayListMultimap.create();
-            Map<String, String> canceldOrders = new TreeMap<>();
+            Map<String, String> canceledOrders = new TreeMap<>();
             String csvCanceled;
+
+            String csvOrder;
+            String csvProduct;
+            String csvModified;
 
             try {
                 JSONArray arr = new JSONArray(jsonData);
-                for (int i = 0; i < arr.length(); i++) {
-                    String type = arr.getJSONObject(i).getString("type");
-
+                int arraySize = arr.length();
+                JSONObject obj;
+                for (int i = 0; i < arraySize; i++) {
+                    obj = arr.getJSONObject(i);
+                    String type = obj.getString("type");
                     switch (type) {
                         case "order":
                             // add to map - (will remove old)
-                            String orderId = new String(arr.getJSONObject(i).getString("order-id"));
+                            String orderId = new String(obj.getString("order-id"));
 
-                            csvOrders = arr.getJSONObject(i).getString("order-id") + "," +
-                                    arr.getJSONObject(i).getString("user-id") + "," +
-                                    arr.getJSONObject(i).getString("product-id") + "," +
-                                    arr.getJSONObject(i).getInt("amount") + ",";
-                            ordersMap.put(orderId, csvOrders);
+                            csvOrder = obj.getString("order-id") + "," +
+                                    obj.getString("user-id") + "," +
+                                    obj.getString("product-id") + "," +
+                                    obj.getInt("amount") + ",";
+                            ordersMap.put(orderId, csvOrder);
                             // remove from canceled
-                            canceldOrders.remove(orderId);
+                            canceledOrders.remove(orderId);
                             // remove from modified
                             modifiedOrdersMap.removeAll(orderId);
                             break;
 
                         case "product":
                             // add to map of the products - remove old ones
-                            String productId = new String(arr.getJSONObject(i).getString("id"));
-                            csvProducts = arr.getJSONObject(i).getString("id") + "," +
-                                    arr.getJSONObject(i).getInt("price") + "\n";
-                            productsMap.put(productId, csvProducts);
+                            String productId = new String(obj.getString("id"));
+                            csvProduct = obj.getString("id") + "," +
+                                    obj.getInt("price") + "\n";
+                            productsMap.put(productId, csvProduct);
                             break;
                         case "modify-order":
-                            String mOrderId = new String(arr.getJSONObject(i).getString("order-id"));
+                            String mOrderId = new String(obj.getString("order-id"));
                             // check if order exist - if not -> do nothing
                             if (ordersMap.containsKey(mOrderId)) {
-                                csvModified = arr.getJSONObject(i).getString("order-id") + "," +
-                                        arr.getJSONObject(i).getInt("amount") + "\n";
+                                csvModified = obj.getString("order-id") + "," +
+                                        obj.getInt("amount") + "\n";
                                 //  there are a canceled order  -> remove it
-                                canceldOrders.remove(mOrderId);
+                                canceledOrders.remove(mOrderId);
                                 // add to the multi map of modified
                                 modifiedOrdersMap.put(mOrderId, csvModified);
                             }
                             break;
                         case "cancel-order":
-                            String cOrderId = new String(arr.getJSONObject(i).getString("order-id"));
+                            String cOrderId = new String(obj.getString("order-id"));
                             csvCanceled = cOrderId + "\n";
                             // check if order exist - if not -> do nothing
                             if (ordersMap.containsKey(cOrderId)) {
                                 // insert to canceld orders set (remove old versions)
-                                canceldOrders.put(cOrderId, csvCanceled);
+                                canceledOrders.put(cOrderId, csvCanceled);
                             }
                             break;
                         default:
@@ -207,46 +205,47 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             }
 
 
-            // foreach order check that product exist -> if not don put in string
-            csvOrders = "";
-            auxBuildCsv(ordersMap, productsMap, modifiedOrdersMap, canceldOrders, this.csvOrders, this.csvProducts, this.csvModified);
+            auxBuildLists(ordersMap, productsMap, modifiedOrdersMap, canceledOrders, this.ordersList, this.productsList, this.modifiedList);
             return this;
         }
 
     }
 
-    private class CsvStringsFromXml {
+    private class DataListsFromXml {
         private String xmlData;
-        private String csvOrders;
-        private String csvProducts;
-        private String csvModified;
+      //  private String csvOrders;
+     //   private String csvProducts;
+       // private String csvModified;
 
-        public CsvStringsFromXml(String xmlData) {
+        private LinkedList<String> ordersList;
+        private LinkedList<String> productsList;
+        private LinkedList<String> modifiedList;
+
+
+        public DataListsFromXml(String xmlData) {
             this.xmlData = xmlData;
         }
 
-        public String getCsvOrders() {
-            return csvOrders;
+        public LinkedList<String> getOrdersList() {
+            return ordersList;
         }
 
-        public String getCsvProducts() {
-            return csvProducts;
+        public LinkedList<String> getProductsList() {
+            return productsList;
         }
 
-        public String getCsvModified() {
-            return csvModified;
-        }
+        public LinkedList<String> getModifiedList() { return modifiedList; }
 
-        public CsvStringsFromXml invoke() throws ParserConfigurationException, IOException, SAXException {
+        public DataListsFromXml invoke() throws ParserConfigurationException, IOException, SAXException {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
             InputSource is = new InputSource((new StringReader(xmlData)));
             Document doc = db.parse(is);
             doc.getDocumentElement().normalize();
 
-            csvOrders = new String();
-            csvProducts = new String();
-            csvModified = new String();
+            String csvOrders;
+            String csvProducts;
+            String csvModified;
             String csvCanceled;
 
             Map<String, String> ordersMap = new TreeMap<>();
@@ -255,9 +254,16 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
             Map<String, String> canceldOrders = new TreeMap<>();
 
             Node n = doc.getFirstChild();   //The root
-            NodeList nListElements = n.getChildNodes();
-            for (int temp = 0; temp < nListElements.getLength(); temp++) {
-                Node elementNode = nListElements.item(temp);
+            NodeList nListElements = n.getChildNodes(); //Elements List
+
+            int elementsAmount = nListElements.getLength();
+            Node elementNode = null;
+            if(elementsAmount>0){
+                elementNode = nListElements.item(0);
+            }
+            for (int temp = 0; temp < elementsAmount; temp++)
+            {
+                //Node elementNode = nListElements.item(temp);
                 if (elementNode.getNodeType() == Node.ELEMENT_NODE) {
                     Element element = (Element) elementNode;
                     switch (elementNode.getNodeName()) {
@@ -311,55 +317,48 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                             System.out.println("XML file is not legal");
                     }
                 }
+                elementNode = elementNode.getNextSibling();
             }
-            // foreach order check that product exist -> if not don put in string
-            csvOrders = "";
-            auxBuildCsv(ordersMap, productsMap, modifiedOrdersMap, canceldOrders, this.csvOrders, this.csvProducts, this.csvModified);
-
+            auxBuildLists(ordersMap, productsMap, modifiedOrdersMap, canceldOrders, this.ordersList, this.productsList, this.modifiedList);
             return this;
         }
 
     }
 
-    void auxBuildCsv(Map<String, String> ordersMap, Map<String, String> productsMap,
+    void auxBuildLists(Map<String, String> ordersMap, Map<String, String> productsMap,
                      ListMultimap<String, String> modifiedOrdersMap, Map<String, String> canceldOrders,
-                     String csvOrders, String csvProducts, String csvModified) {
-        String csvCanceled;
+                     LinkedList<String> ordersList, LinkedList<String> productsList, LinkedList<String> modifiedList) {
+        String tempString;
         for (Map.Entry<String, String> entry : ordersMap.entrySet()) {
             String product = entry.getValue().split(",")[2];
-            if (productsMap.containsKey(product)) {
-                csvOrders += entry.getValue();
+            if (productsMap.containsKey(product))
+            {
+                tempString = entry.getValue();
                 Integer modifiedAmount = 0;
                 Integer canceled = 0;
-                if (modifiedOrdersMap.containsKey(entry.getKey())) {
+                if (modifiedOrdersMap.containsKey(entry.getKey()))
+                {
                     modifiedAmount = modifiedOrdersMap.get(entry.getKey()).size();
                 }
-                if (canceldOrders.containsKey(entry.getKey())) {
+                if (canceldOrders.containsKey(entry.getKey()))
+                {
                     canceled = 1;
                 }
-                csvOrders += modifiedAmount.toString() + "," + canceled.toString() + "\n";
+                tempString += modifiedAmount.toString() + "," + canceled.toString() + "\n";
+                ordersList.add(tempString);
             }
         }
 
-        //insert Canceled orders to string
-        csvCanceled = "";
-        for (Map.Entry<String, String> entry : canceldOrders.entrySet()) {
-            csvCanceled += entry.getValue();
-        }
-
-        //insert products to string
-        csvProducts = "";
+        //insert products to list
         for (Map.Entry<String, String> entry : productsMap.entrySet()) {
-            csvProducts += entry.getValue();
+            productsList.add(entry.getValue());
         }
 
-
-        //insert Modified orders to string
-        csvModified = "";
+        //insert Modified orders to list
         for(String key : modifiedOrdersMap.keySet()){
             Collection<String> values = modifiedOrdersMap.get(key);
-            for (String Value : values) {
-                csvModified += Value;
+            for (String value : values) {
+                modifiedList.add(value);
             }
         }
     }
