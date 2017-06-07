@@ -216,24 +216,28 @@ public class BuyProductInitializerImpl implements BuyProductInitializer {
      //   private String csvProducts;
        // private String csvModified;
 
-        private LinkedList<String> ordersList;
-        private LinkedList<String> productsList;
-        private LinkedList<String> modifiedList;
+        private List<String> ordersList;
+        private List<String> productsList;
+        private List<String> modifiedList;
 
 
         public DataListsFromXml(String xmlData) {
+            this.ordersList = new LinkedList<>();
+            this.productsList = new LinkedList<>();
+            this.modifiedList = new LinkedList<>();
+
             this.xmlData = xmlData;
         }
 
-        public LinkedList<String> getOrdersList() {
+        public List<String> getOrdersList() {
             return ordersList;
         }
 
-        public LinkedList<String> getProductsList() {
+        public List<String> getProductsList() {
             return productsList;
         }
 
-        public LinkedList<String> getModifiedList() { return modifiedList; }
+        public List<String> getModifiedList() { return modifiedList; }
 
         public DataListsFromXml invoke() throws ParserConfigurationException, IOException, SAXException {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -326,7 +330,7 @@ public class BuyProductInitializerImpl implements BuyProductInitializer {
 
     void auxBuildLists(Map<String, String> ordersMap, Map<String, String> productsMap,
                      ListMultimap<String, String> modifiedOrdersMap, Map<String, String> canceldOrders,
-                     LinkedList<String> ordersList, LinkedList<String> productsList, LinkedList<String> modifiedList) {
+                     List<String> ordersList, List<String> productsList, List<String> modifiedList) {
         String tempString;
         for (Map.Entry<String, String> entry : ordersMap.entrySet()) {
             String product = entry.getValue().split(",")[2];
@@ -343,7 +347,7 @@ public class BuyProductInitializerImpl implements BuyProductInitializer {
                 {
                     canceled = 1;
                 }
-                tempString += modifiedAmount.toString() + "," + canceled.toString() + "\n";
+                tempString += modifiedAmount.toString() + "," + canceled.toString();
                 ordersList.add(tempString);
             }
         }
