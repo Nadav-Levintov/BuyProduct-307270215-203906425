@@ -324,8 +324,6 @@ public class DataBaseTest {
         keys.add("Harry");
         values.addAll(DB.get_lines_for_keys(keys,keysName).get());
 
-       // assertEquals("8,a",values.get(0));
-      //  assertEquals("9,d",values.get(1));
         assertEquals("Benny",values.get(0).get("Reviewer").get());
         assertEquals("Harry",values.get(0).get("Book").get());
         assertEquals("8",values.get(0).get("Score").get());
@@ -344,7 +342,7 @@ public class DataBaseTest {
         empty_values.addAll(DB.get_lines_for_keys(keys2,keysName).get());
         assertTrue(empty_values.size()==0);
 
-/*
+
         keys.add("Benny");
 
         try{        //check different array size
@@ -360,10 +358,10 @@ public class DataBaseTest {
         keysName.add("Book");
 
 
-        try{        //check that there are to meny keys
+        try{        //check that there are to meany keys
             values.addAll(DB.get_lines_for_keys(keys,keysName).get());
         }catch(IllegalArgumentException e){}
-*/
+
     }
 /*
     @Test
