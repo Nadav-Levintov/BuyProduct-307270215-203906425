@@ -244,6 +244,40 @@ public class DataBaseImpl implements DataBase {
         });
     }
 
+    private CompletableFuture<List<String>> get_lines_for_keys_aux(List<String> keysList, List<String> keysNameList) {
+
+        get_lines_for_key_parameter_check(keysNameList, keysList);
+
+        String fileName = combine_file_name(keysNameList);
+
+        //here file name is legal
+
+        CompletableFuture<FutureLineStorage> futureLineStorage = futureLineStorageFactory.open(fileName);
+
+        StringBuilder key= new StringBuilder();
+        for (String str: keysList)
+        {
+            key.append(str).append(",");
+        }
+
+        final String final_key = key.toString();
+
+        CompletableFuture<Integer> numberOfLines = futureLineStorage.thenCompose(FutureLineStorage::numberOfLines);
+
+
+        //here have the key to search
+        CompletableFuture<Integer> index = find_index_in_file(key.toString(),keysList.size(),futureLineStorage);
+
+        //here find the first line in file with the right key
+        index = index.thenCombine(futureLineStorage,(index_val,lineStorage) -> get_first_line_with_key(keysList, lineStorage, final_key, index_val))
+                .thenCompose(i -> i);
+
+        //here it copies all the rows with the right key from the first
+        return futureLineStorage.thenCombine(index,(lineStorage, index_val) ->
+                numberOfLines.thenCompose(numberOfLines_val -> get_lines_with_key_starting_from_index(lineStorage, final_key, keysList, index_val, numberOfLines_val))).thenCompose(i->i);
+    }
+
+
     //Public Functions
 
     DataBaseImpl(String db_name, Integer num_of_keys, List<String> names_of_columns, FutureLineStorageFactory futureLineStorageFactory, Boolean allow_multiples) {
@@ -286,13 +320,11 @@ public class DataBaseImpl implements DataBase {
         {
             return CompletableFuture.completedFuture(Optional.empty());
         }
-
         StringBuilder key= new StringBuilder();
         for (String str: keys)
         {
             key.append(str).append(",");
         }
-
 
         CompletableFuture<Integer> rowNumber = find_index_in_file(key.toString(), this.getNum_of_keys(), lineStorage);
 
@@ -327,39 +359,6 @@ public class DataBaseImpl implements DataBase {
     }
 
 
-    public CompletableFuture<List<String>> get_lines_for_keys(List<String> keysList, List<String> keysNameList) {
-
-        get_lines_for_key_parameter_check(keysNameList, keysList);
-
-        String fileName = combine_file_name(keysNameList);
-
-        //here file name is legal
-
-        CompletableFuture<FutureLineStorage> futureLineStorage = futureLineStorageFactory.open(fileName);
-
-        StringBuilder key= new StringBuilder();
-        for (String str: keysList)
-        {
-            key.append(str).append(",");
-        }
-
-        final String final_key = key.toString();
-
-        CompletableFuture<Integer> numberOfLines = futureLineStorage.thenCompose(FutureLineStorage::numberOfLines);
-
-
-        //here have the key to search
-        CompletableFuture<Integer> index = find_index_in_file(key.toString(),keysList.size(),futureLineStorage);
-
-        //here find the first line in file with the right key
-        index = index.thenCombine(futureLineStorage,(index_val,lineStorage) -> get_first_line_with_key(keysList, lineStorage, final_key, index_val))
-                .thenCompose(i -> i);
-
-        //here it copies all the rows with the right key from the first
-        return futureLineStorage.thenCombine(index,(lineStorage, index_val) ->
-                numberOfLines.thenCompose(numberOfLines_val -> get_lines_with_key_starting_from_index(lineStorage, final_key, keysList, index_val, numberOfLines_val))).thenCompose(i->i);
-    }
-
     public String getDb_name() {
         return db_name;
     }
@@ -390,7 +389,7 @@ public class DataBaseImpl implements DataBase {
         return OptionalInt.of(index);
     }
 
-    public CompletableFuture<List<String>> get_lines_for_single_key(String key, String column)
+    public CompletableFuture<List<DataBaseElement>> get_lines_for_single_key(String key, String column)
     {
         List<String> names_of_keys = new ArrayList<>();
         names_of_keys.add(column);
@@ -398,5 +397,34 @@ public class DataBaseImpl implements DataBase {
         keys.add(key);
 
         return this.get_lines_for_keys(keys,names_of_keys);
+    }
+
+    public CompletableFuture<List<DataBaseElement>> get_lines_for_keys(List<String> keysList, List<String> keysNameList)
+    {
+        return get_lines_for_keys_aux(keysList, keysNameList).thenApply(stringList -> {
+            List<DataBaseElement> dataList = new LinkedList<>();
+            List<String> namesList = new ArrayList<>();
+            namesList.addAll(keysNameList);
+            for(String name: this.names_of_columns)
+            {
+                if(namesList.contains(name)) continue;
+                namesList.add(name);
+            }
+            for(String line: stringList)
+            {
+                List<String> valuesList = new ArrayList<>();
+                valuesList.addAll(keysList);
+                String[] lineArray = line.split(",");
+
+                for(int i=0; i < lineArray.length; i++)
+                {
+                    valuesList.add(lineArray[i]);
+                }
+                DataBaseElement dbElement = new DataBaseElement(namesList,valuesList);
+                dataList.add(dbElement);
+
+            }
+            return dataList;
+        });
     }
 }
