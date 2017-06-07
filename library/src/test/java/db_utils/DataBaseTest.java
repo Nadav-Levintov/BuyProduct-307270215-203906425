@@ -363,7 +363,7 @@ public class DataBaseTest {
         }catch(IllegalArgumentException e){}
 
     }
-/*
+
     @Test
     public void get_lines_for_keys_1_keys() throws Exception{
         Integer num_of_keys=1;
@@ -380,7 +380,7 @@ public class DataBaseTest {
 
 
         DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data,false);
-        List<String> values = new ArrayList<>();
+        List<DataBaseElement> values = new ArrayList<>();
         List<String> keysName = new ArrayList<>();
         List<String> keys = new ArrayList<>();
 
@@ -388,11 +388,14 @@ public class DataBaseTest {
         keys.add("Harry");
         values.addAll(DB.get_lines_for_keys(keys,keysName).get());
 
-        assertEquals("9", values.get(0));
+       // assertEquals("9", values.get(0));
+
+        assertEquals("Harry",values.get(0).get("Book").get());
+        assertEquals("9",values.get(0).get("Score").get());
 
 
         //check if no such entry found
-        List<String> empty_values = new ArrayList<>();
+        List<DataBaseElement> empty_values = new ArrayList<>();
         List<String> keys2 = new ArrayList<>();
         keys2.add("NoSuchKey");
         empty_values.addAll(DB.get_lines_for_keys(keys2,keysName).get());
@@ -421,7 +424,7 @@ public class DataBaseTest {
         }catch(IllegalArgumentException e){}
 
     }
-
+/*
     @Test
     public void get_lines_for_keys_2_keys() throws Exception{
         Integer num_of_keys=2;
