@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
 
 public interface DataBase {
 
-    CompletableFuture<Void> build_db(String csv_data);
+    CompletableFuture<Void> build_db(List<String> dataList);
 
     CompletableFuture<Optional<String>> get_val_from_column_by_name(List<String> keys, String column);
 

@@ -160,13 +160,11 @@ public class DataBaseImpl implements DataBase {
     }
 
     //function get list of <all> the keys in the order of sorting and will be saved on disk in that order
-    private ArrayListMultimap<String,String> create_file_sorted_by_keys(String csv_data, List<String> keys, List<Integer> currentIndexKeyList) {
+    private ArrayListMultimap<String,String> create_file_sorted_by_keys(List<String> dataList, List<String> keys, List<Integer> currentIndexKeyList) {
 
-        String[] lines = csv_data.split("\n");
-       // TreeMap<String,String> map = new TreeMap<>();
         ArrayListMultimap<String,String> map = ArrayListMultimap.create();
 
-        for(String line : lines)
+        for(String line : dataList)
         {
             String[] curr_line = line.split(",");
 
@@ -257,7 +255,7 @@ public class DataBaseImpl implements DataBase {
         this.allow_multiples = allow_multiples;
     }
 
-    public CompletableFuture<Void> build_db(String csv_data){
+    public CompletableFuture<Void> build_db(List<String> dataList){
 
         List<String> keyList = new ArrayList<>();
         ArrayList<Integer> keyIndexList = new ArrayList<>();
@@ -274,7 +272,7 @@ public class DataBaseImpl implements DataBase {
         for (List<Integer> currentIndexKeyList: listOfAllPermutations)
         {
             String fileName = createFileNameFromPermutation(keyList, currentIndexKeyList);
-            write_map_to_new_file(create_file_sorted_by_keys(csv_data, keyList, currentIndexKeyList), fileName);
+            write_map_to_new_file(create_file_sorted_by_keys(dataList, keyList, currentIndexKeyList), fileName);
         }
 
         return CompletableFuture.completedFuture(null);

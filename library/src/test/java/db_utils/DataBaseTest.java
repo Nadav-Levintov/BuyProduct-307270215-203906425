@@ -6,10 +6,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -24,7 +21,7 @@ public class DataBaseTest {
 //    @Rule
 //    public Timeout globalTimeout = Timeout.seconds(30);
 
-    public DataBase SetupAndBuildDataBase(Integer num_of_keys,List<String> names_of_columns,String csv_data, Boolean allowMultipuls)
+    public DataBase SetupAndBuildDataBase(Integer num_of_keys,List<String> names_of_columns,LinkedList<String> dataList, Boolean allowMultipuls)
     {
 
         Injector injector= Guice.createInjector(new MockedFutureLineStorageModule());
@@ -37,7 +34,7 @@ public class DataBaseTest {
                 .setAllow_Multiples(allowMultipuls)
                 .build();
 
-        DB.build_db(csv_data);
+        DB.build_db(dataList);
 
         return DB;
     }
@@ -51,14 +48,14 @@ public class DataBaseTest {
         names_of_columns.add("Book");
         names_of_columns.add("Score");
 
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Nadav,Harry,8");
+        data.add("Nadav,Harry2,3");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Bla,8");
 
-        String csv =    "Nadav,Harry,8\n" +
-                "Nadav,Harry2,3\n"+
-                "Benny,Harry,9\n" +
-                "Benny,Harry,9\n" +
-                "Benny,Bla,8\n";
-
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv, false);
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data, false);
 
         Integer val1= DB.getNum_of_keys();
 
@@ -89,14 +86,14 @@ public class DataBaseTest {
         names_of_columns.add("Book");
         names_of_columns.add("Score");
 
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Nadav,Harry,8");
+        data.add("Nadav,Harry2,3");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Bla,8");
 
-        String csv =    "Nadav,Harry,8\n" +
-                "Nadav,Harry2,3\n"+
-                "Benny,Harry,9\n" +
-                "Benny,Harry,9\n" +
-                "Benny,Bla,8\n";
-
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv, false);
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data, false);
 
         assertEquals(num_of_keys,DB.getNum_of_keys());
         assertEquals(OptionalInt.of(names_of_columns.size()),OptionalInt.of(DB.getNum_of_columns()));
@@ -117,14 +114,15 @@ public class DataBaseTest {
         names_of_columns.add("Score");
         names_of_columns.add("col3");
 
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Nadav,Harry,8,a");
+        data.add("Nadav,Harry2,3,b");
+        data.add("Benny,Harry,9,c");
+        data.add("Benny,Harry,9,d");
+        data.add("Benny,Bla,8,e");
 
-        String csv =    "Nadav,Harry,8,a\n" +
-                "Nadav,Harry2,3,b\n"+
-                "Benny,Harry,9,c\n" +
-                "Benny,Harry,9,d\n" +
-                "Benny,Bla,8,e\n";
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv, false);
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data, false);
 
         assertEquals(num_of_keys,DB.getNum_of_keys());
         assertEquals(OptionalInt.of(names_of_columns.size()),OptionalInt.of(DB.getNum_of_columns()));
@@ -146,14 +144,14 @@ public class DataBaseTest {
         names_of_columns.add("Book");
         names_of_columns.add("Score");
 
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Nadav,Harry,8");
+        data.add("Nadav,Harry2,3");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Bla,8");
 
-        String csv =    "Nadav,Harry,8\n" +
-                "Nadav,Harry2,3\n"+
-                "Benny,Harry,9\n" +
-                "Benny,Harry,9\n" +
-                "Benny,Bla,8\n";
-
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv, false);
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data, false);
         List<String> keys1 = new ArrayList<>();
         keys1.add("Nadav");
         List<String> keys2 = new ArrayList<>();
@@ -182,14 +180,14 @@ public class DataBaseTest {
         names_of_columns.add("Book");
         names_of_columns.add("Score");
 
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Nadav,Harry,8");
+        data.add("Nadav,Harry2,3");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Bla,8");
 
-        String csv =    "Nadav,Harry,8\n" +
-                "Nadav,Harry2,3\n"+
-                "Benny,Harry,9\n" +
-                "Benny,Harry,9\n" +
-                "Benny,Bla,8\n";
-
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv,false);
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data,false);
         List<String> keys1 = new ArrayList<>();
         keys1.add("Nadav");
         keys1.add("Harry");
@@ -217,14 +215,14 @@ public class DataBaseTest {
         names_of_columns.add("Score");
         names_of_columns.add("Letter");
 
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Nadav,Harry,8,a");
+        data.add("Nadav,Harry2,3,b");
+        data.add("Benny,Harry,9,c");
+        data.add("Benny,Harry,9,d");
+        data.add("Benny,Bla,8,e");
 
-        String csv =    "Nadav,Harry,8,a\n" +
-                "Nadav,Harry2,3,b\n"+
-                "Benny,Harry,9,c\n" +
-                "Benny,Harry,9,d\n" +
-                "Benny,Bla,8,e\n";
-
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv, false);
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data, false);
         List<String> keys1 = new ArrayList<>();
         keys1.add("Nadav");
         keys1.add("Harry");
@@ -270,14 +268,14 @@ public class DataBaseTest {
         names_of_columns.add("Book");
         names_of_columns.add("Score");
 
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Nadav,Harry,8");
+        data.add("Nadav,Harry2,3");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Bla,8");
 
-        String csv =    "Nadav,Harry,8\n" +
-                "Nadav,Harry2,3\n"+
-                "Benny,Harry,9\n" +
-                "Benny,Harry,9\n" +
-                "Benny,Bla,8\n";
-
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv,false);
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data,false);
         List<String> keys1 = new ArrayList<>();
         keys1.add("Nadav");
         keys1.add("Harry");
@@ -306,15 +304,16 @@ public class DataBaseTest {
         names_of_columns.add("Score");
         names_of_columns.add("Value");
 
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Nadav,Harry,8,a");
+        data.add("Nadav,Harry2,3,b");
+        data.add("Benny,Harry,9,d");
+        data.add("Benny,Harry,9,d");
+        data.add("Benny,Harry,8,a");
+        data.add("Benny,Bla,8,e");
 
-        String csv =    "Nadav,Harry,8,a\n" +
-                "Nadav,Harry2,3,b\n"+
-                "Benny,Harry,9,c\n" +
-                "Benny,Harry,9,d\n" +
-                "Benny,Harry,8,a\n" +
-                "Benny,Bla,8,e\n";
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv,false);
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data,false);
         List<String> values = new ArrayList<>();
         List<String> keysName = new ArrayList<>();
         List<String> keys = new ArrayList<>();
@@ -366,13 +365,15 @@ public class DataBaseTest {
         names_of_columns.add("Book");
         names_of_columns.add("Score");
 
-        String csv =    "Harry,8,\n" +
-                "Harry2,4\n"+
-                "Harry,9\n" +
-                "Harry3,8\n" +
-                "Bla5,8\n";
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Harry,8");
+        data.add("Harry2,4");
+        data.add("Harry,9");
+        data.add("Harry3,8");
+        data.add("Bla5,8");
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv,false);
+
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data,false);
         List<String> values = new ArrayList<>();
         List<String> keysName = new ArrayList<>();
         List<String> keys = new ArrayList<>();
@@ -381,7 +382,7 @@ public class DataBaseTest {
         keys.add("Harry");
         values.addAll(DB.get_lines_for_keys(keysName,keys).get());
 
-        assertEquals(values.get(0), "9");
+        assertEquals("9", values.get(0));
 
 
         //check if no such entry found
@@ -423,13 +424,15 @@ public class DataBaseTest {
         names_of_columns.add("Book");
         names_of_columns.add("Score");
 
-        String csv =    "Nadav,Harry,8,a\n" +
-                "Nadav,Harry2,3\n"+
-                "Benny,Harry,9\n" +
-                "Benny,Harry,8\n" +
-                "Benny,Bla,8\n";
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Nadav,Harry,8,a");
+        data.add("Nadav,Harry2,3");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Harry,8");
+        data.add("Benny,Bla,8");
 
-        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,csv,false);
+
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data,false);
         List<String> values = new ArrayList<>();
         List<String> keysName = new ArrayList<>();
         List<String> keys = new ArrayList<>();

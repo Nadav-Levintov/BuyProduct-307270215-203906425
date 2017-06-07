@@ -41,10 +41,9 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
 
         // create the csv string from json string
         DataListsFromJson dataLists = new DataListsFromJson(jsonData).invoke();
-
-        List<String> ordersList = dataLists.getOrdersList();
-        List<String> productsList = dataLists.getProductsList();
-        List<String> modifiedList = dataLists.getModifiedList();
+        LinkedList<String> ordersList = dataLists.getOrdersList();
+        LinkedList<String> productsList = dataLists.getProductsList();
+        LinkedList<String> modifiedList = dataLists.getModifiedList();
 
         return createDataBasesFromLists(ordersList, productsList, modifiedList);
 
@@ -63,7 +62,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
         return createDataBasesFromLists(ordersList, productsList, modifiedList);
     }
 
-    private CompletableFuture<Void> createDataBasesFromLists(LinkedList<String> ordersList, LinkedList<String>  productsList, LinkedList<String>  modifiedList) {
+    private CompletableFuture<Void> createDataBasesFromLists(List<String> ordersList, List<String>  productsList, List<String>  modifiedList) {
         // build the data bases
         Integer num_of_keys = 3;
 
@@ -171,7 +170,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                             // add to map of the products - remove old ones
                             String productId = new String(obj.getString("id"));
                             csvProduct = obj.getString("id") + "," +
-                                    obj.getInt("price") + "\n";
+                                    obj.getInt("price");
                             productsMap.put(productId, csvProduct);
                             break;
                         case "modify-order":
@@ -179,7 +178,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                             // check if order exist - if not -> do nothing
                             if (ordersMap.containsKey(mOrderId)) {
                                 csvModified = obj.getString("order-id") + "," +
-                                        obj.getInt("amount") + "\n";
+                                        obj.getInt("amount");
                                 //  there are a canceled order  -> remove it
                                 canceledOrders.remove(mOrderId);
                                 // add to the multi map of modified
@@ -188,7 +187,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                             break;
                         case "cancel-order":
                             String cOrderId = new String(obj.getString("order-id"));
-                            csvCanceled = cOrderId + "\n";
+                            csvCanceled = cOrderId;
                             // check if order exist - if not -> do nothing
                             if (ordersMap.containsKey(cOrderId)) {
                                 // insert to canceld orders set (remove old versions)
@@ -285,7 +284,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                             // add to map of the products - remove old ones
                             String productId = element.getElementsByTagName("id").item(0).getTextContent();
                             csvProducts = element.getElementsByTagName("id").item(0).getTextContent() + "," +
-                                    element.getElementsByTagName("price").item(0).getTextContent() + "\n";
+                                    element.getElementsByTagName("price").item(0).getTextContent();
                             productsMap.put(productId, csvProducts);
                             break;
 
@@ -294,7 +293,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
                             // check if order exist - if not -> do nothing
                             if (ordersMap.containsKey(mOrderId)) {
                                 csvModified = element.getElementsByTagName("order-id").item(0).getTextContent() + "," +
-                                        element.getElementsByTagName("new-amount").item(0).getTextContent() + "\n";
+                                        element.getElementsByTagName("new-amount").item(0).getTextContent();
                                 //  there are a canceled order  -> remove it
                                 canceldOrders.remove(mOrderId);
                                 // add to the multi map of modified
@@ -305,7 +304,7 @@ public class BuyProductInitializerImp implements BuyProductInitializer {
 
                         case "CancelOrder":
                             String cOrderId = element.getElementsByTagName("order-id").item(0).getTextContent();
-                            csvCanceled = cOrderId + "\n";
+                            csvCanceled = cOrderId;
                             // check if order exist - if not -> do nothing
                             if (ordersMap.containsKey(cOrderId)) {
                                 // insert to canceled orders set (remove old versions)
