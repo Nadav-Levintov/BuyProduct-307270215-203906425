@@ -315,24 +315,43 @@ public class DataBaseTest {
 
         DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data,false);
         List<DataBaseElement> values = new ArrayList<>();
+        List<DataBaseElement> values2 = new ArrayList<>();
         List<String> keysName = new ArrayList<>();
+        List<String> keysName2 = new ArrayList<>();
         List<String> keys = new ArrayList<>();
+        List<String> keys3 = new ArrayList<>();
 
         keysName.add("Reviewer");
         keysName.add("Book");
+        keysName2.add("Book");
         keys.add("Benny");
         keys.add("Harry");
+        keys3.add("Harry");
         values.addAll(DB.get_lines_for_keys(keys,keysName).get());
+        values2.addAll(DB.get_lines_for_keys(keys3,keysName2).get());
 
         assertEquals("Benny",values.get(0).get("Reviewer"));
         assertEquals("Harry",values.get(0).get("Book"));
         assertEquals("8",values.get(0).get("Score"));
         assertEquals("a",values.get(0).get("Value"));
 
+        assertEquals(3,values2.size());
+        assertEquals("Benny",values2.get(0).get("Reviewer"));
+        assertEquals("Benny",values2.get(1).get("Reviewer"));
+        assertEquals("Nadav",values2.get(2).get("Reviewer"));
+        assertEquals("8",values2.get(0).get("Score"));
+        assertEquals("9",values2.get(1).get("Score"));
+        assertEquals("8",values2.get(2).get("Score"));
+        assertEquals("a",values2.get(0).get("Value"));
+        assertEquals("d",values2.get(1).get("Value"));
+        assertEquals("a",values2.get(2).get("Value"));
+
         assertEquals("Benny",values.get(1).get("Reviewer"));
         assertEquals("Harry",values.get(1).get("Book"));
         assertEquals("9",values.get(1).get("Score"));
         assertEquals("d",values.get(1).get("Value"));
+
+        values2.addAll(DB.get_lines_for_keys(keys,keysName).get());
 
         //check if no such entry found
         List<DataBaseElement> empty_values = new ArrayList<>();
@@ -424,7 +443,7 @@ public class DataBaseTest {
         }catch(IllegalArgumentException e){}
 
     }
-/*
+
     @Test
     public void get_lines_for_keys_2_keys() throws Exception{
         Integer num_of_keys=2;
@@ -442,7 +461,7 @@ public class DataBaseTest {
 
 
         DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data,false);
-        List<String> values = new ArrayList<>();
+        List<DataBaseElement> values = new ArrayList<>();
         List<String> keysName = new ArrayList<>();
         List<String> keys = new ArrayList<>();
 
@@ -450,19 +469,17 @@ public class DataBaseTest {
         keys.add("Benny");
         values.addAll(DB.get_lines_for_keys(keys,keysName).get());
 
-        assertEquals(values.get(0), "Bla,8");
-        assertEquals(values.get(1), "Harry,8");
-
-
+        assertEquals(values.get(0).get("Book"), "Bla");
+        assertEquals(values.get(1).get("Book"), "Harry");
+        assertEquals(values.get(0).get("Score"), "8");
+        assertEquals(values.get(1).get("Score"), "8");
 
         //check if no such entry found
-        List<String> empty_values = new ArrayList<>();
+        List<DataBaseElement> empty_values = new ArrayList<>();
         List<String> keys2 = new ArrayList<>();
         keys2.add("NoSuchKey");
         empty_values.addAll(DB.get_lines_for_keys(keys2,keysName).get());
         assertTrue(empty_values.size()==0);
-
-
         keys.add("Benny");
 
         try{        //check different array size
@@ -483,6 +500,89 @@ public class DataBaseTest {
         }catch(IllegalArgumentException e){}
 
     }
-*/
 
+    @Test
+    public void get_lines_for_single_key() throws Exception{
+        Integer num_of_keys=2;
+        List<String> names_of_columns = new ArrayList<>();
+        names_of_columns.add("Reviewer");
+        names_of_columns.add("Book");
+        names_of_columns.add("Score");
+
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Nadav,Harry,8,a");
+        data.add("Nadav,Harry2,3");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Harry,8");
+        data.add("Benny,Bla,8");
+
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data,false);
+        List<DataBaseElement> values = new ArrayList<>();
+        values.addAll(DB.get_lines_for_single_key("Benny","Reviewer").get());
+
+        assertEquals(values.get(0).get("Book"), "Bla");
+        assertEquals(values.get(1).get("Book"), "Harry");
+        assertEquals(values.get(0).get("Score"), "8");
+        assertEquals(values.get(1).get("Score"), "8");
+
+    }
+
+    @Test
+    public void get_lines_for_keys_2_keys_multipels() throws Exception{
+        Integer num_of_keys=2;
+        List<String> names_of_columns = new ArrayList<>();
+        names_of_columns.add("Reviewer");
+        names_of_columns.add("Book");
+        names_of_columns.add("Score");
+
+        LinkedList<String> data = new LinkedList<>();
+        data.add("Nadav,Harry,8,a");
+        data.add("Nadav,Harry2,3");
+        data.add("Benny,Harry,9");
+        data.add("Benny,Harry,8");
+        data.add("Benny,Bla,8");
+
+
+        DataBase DB = SetupAndBuildDataBase(num_of_keys,names_of_columns,data,true);
+        List<DataBaseElement> values = new ArrayList<>();
+        List<String> keysName = new ArrayList<>();
+        List<String> keys = new ArrayList<>();
+
+        keysName.add("Reviewer");
+        keys.add("Benny");
+        values.addAll(DB.get_lines_for_keys(keys,keysName).get());
+
+        assertEquals(values.get(0).get("Book"), "Bla");
+        assertEquals(values.get(1).get("Book"), "Harry");
+        assertEquals(values.get(2).get("Book"), "Harry");
+        assertEquals(values.get(0).get("Score"), "8");
+        assertEquals(values.get(1).get("Score"), "9");
+        assertEquals(values.get(2).get("Score"), "8");
+
+        //check if no such entry found
+        List<DataBaseElement> empty_values = new ArrayList<>();
+        List<String> keys2 = new ArrayList<>();
+        keys2.add("NoSuchKey");
+        empty_values.addAll(DB.get_lines_for_keys(keys2,keysName).get());
+        assertTrue(empty_values.size()==0);
+        keys.add("Benny");
+
+        try{        //check different array size
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
+        }catch(IllegalArgumentException e){}
+
+        keysName.add("NoSuchKeyName");
+        try{        //check that keys name are legal
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
+        }catch(IllegalArgumentException e){}
+        keysName.remove("NoSuchKey");
+
+        keysName.add("Book");
+
+
+        try{        //check that there are to meany keys
+            values.addAll(DB.get_lines_for_keys(keys,keysName).get());
+        }catch(IllegalArgumentException e){}
+
+    }
 }
