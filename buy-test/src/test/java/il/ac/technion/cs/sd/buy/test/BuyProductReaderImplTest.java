@@ -3,7 +3,6 @@ package il.ac.technion.cs.sd.buy.test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import db_utils.DataBaseFactory;
-import il.ac.technion.cs.sd.buy.app.BuyProductInitializer;
 import il.ac.technion.cs.sd.buy.app.BuyProductReader;
 import il.ac.technion.cs.sd.buy.app.BuyProductReaderImpl;
 import org.json.JSONException;
@@ -17,9 +16,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Created by Nadav on 26-May-17.
