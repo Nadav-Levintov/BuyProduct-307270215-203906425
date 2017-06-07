@@ -35,8 +35,8 @@ public class BuyProductReaderImpl implements BuyProductReader {
                         String order_id = line_values[0];
                         String product_id = line_values[1];
                         CompletableFuture<Long> curr_amount = CompletableFuture.completedFuture(Long.parseLong(line_values[2]));
-                        Boolean is_moded = Boolean.parseBoolean(line_values[3]);
-                        Boolean is_canceled = Boolean.parseBoolean(line_values[4]);
+                        Boolean is_moded = !(line_values[3].equals("0"));
+                        Boolean is_canceled = line_values[4].equals("1");
 
 
                         if (!is_canceled) {
@@ -147,7 +147,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
                     {
                         return Boolean.FALSE;
                     }
-                    return Boolean.parseBoolean(list.get(0).split(",")[4]);
+                    return list.get(0).split(",")[4].equals("1");
                 }
         );
     }
@@ -166,14 +166,15 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
         return order_line_list.thenCombine(mod_line_list,(order_list,mod_order_list) ->
         {
-            String[] order = order_list.get(0).split(",");
-            Boolean is_mod = Boolean.parseBoolean(order[3]);
-            Boolean is_canceled = Boolean.parseBoolean(order[4]);
-            Integer amount = Integer.parseInt(order[2]);
             if(order_list.isEmpty())
             {
                 return OptionalInt.empty();
             }
+
+            String[] order = order_list.get(0).split(",");
+            Boolean is_mod = !order[3].equals("0");
+            Boolean is_canceled = order[4].equals("1");
+            Integer amount = Integer.parseInt(order[2]);
 
             if(is_mod)
             {
@@ -192,35 +193,34 @@ public class BuyProductReaderImpl implements BuyProductReader {
     @Override
     public CompletableFuture<List<Integer>> getHistoryOfOrder(String orderId) {
 
-        CompletableFuture<List<Integer>> res_list = CompletableFuture.completedFuture(new ArrayList<>());
-
         CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(orderId, "order");
 
         CompletableFuture<List<String>> mod_line_list = modified_ordersDB.get_lines_for_single_key(orderId, "order");
 
-        order_line_list.thenApply(lines -> lines
-                .stream()
-                .map(line -> res_list
-                        .thenApply(list -> list
-                                .add(Integer.parseInt(line.split(",")[2]))))); // amount from orders table
+        CompletableFuture<List<Integer>>  res_list = order_line_list.thenApply(lines ->
+                lines.stream()
+                .map(line ->  Integer.parseInt(line.split(",")[2]))
+                .collect(Collectors.toList())); // amount from orders table
 
-        mod_line_list.thenApply(lines -> lines
-                .stream()
-                .map(line -> res_list
-                        .thenApply(list -> list
-                                .add(Integer.parseInt(line.split(",")[1]))))); //amount from modified orders table
+        res_list = res_list.thenCombine(mod_line_list,(list,lines) -> {
+            list.addAll(
+                    lines.stream()
+                            .map(line -> Integer.parseInt(line.split(",")[0]))//amount from modified orders table
+                            .collect(Collectors.toList()));
+            return list;
+        }).thenApply(i -> i);
 
-        order_line_list.thenApply(lines -> lines
-                .stream()
-                .map(line -> res_list
-                        .thenApply(list ->
-                        {
-                            Boolean is_order_canceled =Boolean.parseBoolean(line.split(",")[4]);
-                            if(is_order_canceled) {
-                                list.add(-1);
-                            }
-                            return list;
-                        })));
+        res_list = res_list.thenCombine(order_line_list,(list,lines) -> {
+            if(lines.size()!=0)
+            {
+                Boolean is_order_canceled = lines.get(0).split(",")[4].equals("1");
+                List<Integer> temp = new ArrayList<Integer>();
+                if (is_order_canceled) {
+                    list.add(-1);
+                }
+            }
+            return list;
+        }).thenApply(i->i);
 
         return res_list;
     }
@@ -253,8 +253,8 @@ public class BuyProductReaderImpl implements BuyProductReader {
                 String order_id = line_values[0];
                 String product_id = line_values[1];
                 String order_amount = line_values[2];
-                Boolean is_modified = Boolean.parseBoolean(line_values[3]);
-                Boolean is_canceled = Boolean.parseBoolean(line_values[4]);
+                Boolean is_modified = !(line_values[3].equals("0"));
+                Boolean is_canceled = line_values[4].equals("1");
 
                 CompletableFuture<Integer> price = productsDB.get_val_from_column_by_name(new ArrayList<String>(Arrays.asList(product_id)),"price")
                         .thenApply(price_optional ->
@@ -291,7 +291,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         .map(line ->{
             String line_values[] = line.split(",");
             String user_id = line_values[1];
-            Boolean is_canceled = Boolean.parseBoolean(line_values[4]);
+            Boolean is_canceled = line_values[4].equals("1");
 
             String res = "";
             if(!is_canceled)
@@ -335,8 +335,8 @@ public class BuyProductReaderImpl implements BuyProductReader {
                                 String order_id = line_values[0];
                                 String user_id = line_values[1];
                                 String amount = line_values[2];
-                                Boolean is_canceled = Boolean.parseBoolean(line_values[4]);
-                                Boolean is_modified = Boolean.parseBoolean(line_values[3]);
+                                Boolean is_canceled = line_values[4].equals("1");
+                                Boolean is_modified = !(line_values[3].equals("0"));
 
                                 CompletableFuture<Long> res = CompletableFuture.completedFuture(0L);
                                 if (!is_canceled) {
@@ -380,17 +380,23 @@ public class BuyProductReaderImpl implements BuyProductReader {
     public CompletableFuture<OptionalDouble> getAverageNumberOfItemsPurchased(String productId) {
 
         CompletableFuture<OptionalLong> numberOfItemsPurchased = getTotalNumberOfItemsPurchased(productId);
-        CompletableFuture<List<String>> order_ids = getOrderIdsThatPurchased(productId);
-        CompletableFuture<Integer> numOfOrders = order_ids.thenApply(List::size);
+        CompletableFuture<List<String>> order_list = ordersDB.get_lines_for_single_key(productId,"product");
 
-        return numberOfItemsPurchased.thenCombine(numOfOrders, (purchased_amount,orders_num) -> {
+
+        return numberOfItemsPurchased.thenCombine(order_list, (purchased_amount,list) -> {
+            Integer orders_num =0;
+            for(int i=0;i<list.size();i++)
+            {
+                if(list.get(i).split(",")[4].equals("0"))
+                    orders_num++;
+            }
             if(orders_num == 0)
             {
                 return OptionalDouble.empty();
             }
             else
             {
-               return OptionalDouble.of((double) (purchased_amount.getAsLong() / orders_num));
+               return OptionalDouble.of((double) (purchased_amount.getAsLong() / (double)orders_num));
             }
         });
 
@@ -410,7 +416,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
             return OptionalDouble.of(lines.stream()
                     .mapToDouble(line -> {
                         String line_values[] = line.split(",");
-                        Boolean is_canceled = Boolean.parseBoolean(line_values[4]);
+                        Boolean is_canceled = line_values[4].equals("1");
 
                         Double res = 0d;
                         if (is_canceled) {
@@ -438,7 +444,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
             return OptionalDouble.of(lines.stream()
                     .mapToDouble(line -> {
                         String line_values[] = line.split(",");
-                        Boolean is_moded = Boolean.parseBoolean(line_values[3]);
+                        Boolean is_moded = !(line_values[3].equals("0"));
 
                         Double res = 0d;
                         if (is_moded) {
@@ -454,7 +460,6 @@ public class BuyProductReaderImpl implements BuyProductReader {
     public CompletableFuture<Map<String, Long>> getAllItemsPurchased(String userId) {
 
         CompletableFuture<List<String>> order_line_list = ordersDB.get_lines_for_single_key(userId,"user");
-
         return get_items_map_from_order_list(order_line_list);
     }
 
