@@ -391,4 +391,14 @@ public class DataBaseImpl implements DataBase {
         Integer index = names_of_columns.indexOf(col_name);
         return OptionalInt.of(index);
     }
+
+    public CompletableFuture<List<String>> get_lines_for_single_key(String key, String column)
+    {
+        List<String> names_of_keys = new ArrayList<>();
+        names_of_keys.add(column);
+        List<String> keys = new ArrayList<>();
+        keys.add(key);
+
+        return this.get_lines_for_keys(names_of_keys,keys);
+    }
 }
