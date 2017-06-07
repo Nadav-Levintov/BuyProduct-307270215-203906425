@@ -41,9 +41,9 @@ public class BuyProductInitializerImpl implements BuyProductInitializer {
 
         // create the csv string from json string
         DataListsFromJson dataLists = new DataListsFromJson(jsonData).invoke();
-        LinkedList<String> ordersList = dataLists.getOrdersList();
-        LinkedList<String> productsList = dataLists.getProductsList();
-        LinkedList<String> modifiedList = dataLists.getModifiedList();
+        List<String> ordersList = dataLists.getOrdersList();
+        List<String> productsList = dataLists.getProductsList();
+        List<String> modifiedList = dataLists.getModifiedList();
 
         return createDataBasesFromLists(ordersList, productsList, modifiedList);
 
@@ -112,24 +112,28 @@ public class BuyProductInitializerImpl implements BuyProductInitializer {
 
     private class DataListsFromJson {
         private String jsonData;
-        private LinkedList<String> ordersList;
-        private LinkedList<String> productsList;
-        private LinkedList<String> modifiedList;
+        private List<String> ordersList;
+        private List<String> productsList;
+        private List<String> modifiedList;
 
 
         public DataListsFromJson(String jsonData) {
             this.jsonData = jsonData;
+            this.ordersList = new LinkedList<>();
+            this.productsList = new LinkedList<>();
+            this.modifiedList = new LinkedList<>();
+
         }
 
-        public LinkedList<String> getOrdersList() {
+        public List<String> getOrdersList() {
             return ordersList;
         }
 
-        public LinkedList<String> getProductsList() {
+        public List<String> getProductsList() {
             return productsList;
         }
 
-        public LinkedList<String> getModifiedList() { return modifiedList; }
+        public List<String> getModifiedList() { return modifiedList; }
 
 
         public DataListsFromJson invoke() {
