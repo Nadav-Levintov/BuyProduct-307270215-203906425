@@ -24,7 +24,7 @@ import static org.junit.Assert.*;
 public class BuyProductReaderImplTest {
 
 
-    public BuyProductReader SetupAndBuildBookScoreReader(String file_name) throws IOException, SAXException, ParserConfigurationException, InterruptedException, ExecutionException, JSONException {
+    private BuyProductReader SetupAndBuildBookScoreReader(String file_name) throws IOException, SAXException, ParserConfigurationException, InterruptedException, ExecutionException, JSONException {
 
         String fileContents =
                 new Scanner(new File(ExampleTest.class.getResource(file_name).getFile())).useDelimiter("\\Z").next();
@@ -40,9 +40,8 @@ public class BuyProductReaderImplTest {
         }
 
         DataBaseFactory dbf = fakeBuyProductInitializer.get_DataBaseFactory();
-        BuyProductReader buyProductReader= new BuyProductReaderImpl(dbf);
 
-        return buyProductReader;
+        return new BuyProductReaderImpl(dbf);
     }
     @Test
     public void isValidOrderId_xml() throws Exception {

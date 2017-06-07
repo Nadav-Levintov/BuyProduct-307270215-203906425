@@ -420,7 +420,7 @@ public class DataBaseImpl implements DataBase {
                 {
                     valuesList.add(lineArray[i]);
                 }
-                DataBaseElement dbElement = new DataBaseElement(namesList,valuesList);
+                DataBaseElement dbElement = new DataBaseElementImpl(namesList,valuesList);
                 dataList.add(dbElement);
 
             }

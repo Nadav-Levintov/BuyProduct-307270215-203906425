@@ -2,13 +2,10 @@ package db_utils;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.Timeout;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -324,15 +321,15 @@ public class DataBaseTest {
         keys.add("Harry");
         values.addAll(DB.get_lines_for_keys(keys,keysName).get());
 
-        assertEquals("Benny",values.get(0).get("Reviewer").get());
-        assertEquals("Harry",values.get(0).get("Book").get());
-        assertEquals("8",values.get(0).get("Score").get());
-        assertEquals("a",values.get(0).get("Value").get());
+        assertEquals("Benny",values.get(0).get("Reviewer"));
+        assertEquals("Harry",values.get(0).get("Book"));
+        assertEquals("8",values.get(0).get("Score"));
+        assertEquals("a",values.get(0).get("Value"));
 
-        assertEquals("Benny",values.get(1).get("Reviewer").get());
-        assertEquals("Harry",values.get(1).get("Book").get());
-        assertEquals("9",values.get(1).get("Score").get());
-        assertEquals("d",values.get(1).get("Value").get());
+        assertEquals("Benny",values.get(1).get("Reviewer"));
+        assertEquals("Harry",values.get(1).get("Book"));
+        assertEquals("9",values.get(1).get("Score"));
+        assertEquals("d",values.get(1).get("Value"));
 
         //check if no such entry found
         List<DataBaseElement> empty_values = new ArrayList<>();
@@ -347,12 +344,12 @@ public class DataBaseTest {
 
         try{        //check different array size
             values.addAll(DB.get_lines_for_keys(keys,keysName).get());
-        }catch(IllegalArgumentException e){}
+        }catch(IllegalArgumentException ignored){}
 
         keysName.add("NoSuchKey");
         try{        //check that keys name are legal
             values.addAll(DB.get_lines_for_keys(keys,keysName).get());
-        }catch(IllegalArgumentException e){}
+        }catch(IllegalArgumentException ignored){}
         keysName.remove("NoSuchKey");
 
         keysName.add("Book");
@@ -360,7 +357,7 @@ public class DataBaseTest {
 
         try{        //check that there are to meany keys
             values.addAll(DB.get_lines_for_keys(keys,keysName).get());
-        }catch(IllegalArgumentException e){}
+        }catch(IllegalArgumentException ignored){}
 
     }
 
@@ -390,8 +387,8 @@ public class DataBaseTest {
 
        // assertEquals("9", values.get(0));
 
-        assertEquals("Harry",values.get(0).get("Book").get());
-        assertEquals("9",values.get(0).get("Score").get());
+        assertEquals("Harry",values.get(0).get("Book"));
+        assertEquals("9",values.get(0).get("Score"));
 
 
         //check if no such entry found
@@ -406,14 +403,14 @@ public class DataBaseTest {
 
         try{        //check different array size
             values.addAll(DB.get_lines_for_keys(keys,keysName).get());
-        }catch(IllegalArgumentException e){}
+        }catch(IllegalArgumentException ignored){}
 
         keysName.remove("Book");
         keysName.add("NoSuchKeyName");
         keys.add("Harry");
         try{        //check that keys name are legal
             values.addAll(DB.get_lines_for_keys(keys,keysName).get());
-        }catch(IllegalArgumentException e){}
+        }catch(IllegalArgumentException ignored){}
 
         keysName.remove("NoSuchKey");
         keysName.add("Book");
@@ -421,7 +418,7 @@ public class DataBaseTest {
 
         try{        //check that there are to meany keys
             values.addAll(DB.get_lines_for_keys(keys,keysName).get());
-        }catch(IllegalArgumentException e){}
+        }catch(IllegalArgumentException ignored){}
 
     }
 /*
