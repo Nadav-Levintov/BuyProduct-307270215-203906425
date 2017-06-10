@@ -22,7 +22,7 @@ public class DataBaseImpl implements DataBase {
 
 
     //Private Functions
-
+/*
     private CompletableFuture<List<String>> get_lines_with_key_starting_from_index (FutureLineStorage lineStorage,
                                                                                     final String key,
                                                                                     final List<String> keysList,
@@ -40,7 +40,6 @@ public class DataBaseImpl implements DataBase {
 
         CompletableFuture<String> curr_line = lineStorage.read(index);
 
-
         return listCompletableFuture.thenCombine(curr_line,(list,curr_line_val) ->
         {
             String[] values = curr_line_val.split(",");
@@ -54,6 +53,59 @@ public class DataBaseImpl implements DataBase {
             return list;
         });
     }
+*/
+    private CompletableFuture<List<String>> get_lines_with_key_starting_from_index (FutureLineStorage lineStorage,
+                                                                                    final String key,
+                                                                                    final List<String> keysList,
+                                                                                    final Integer index,
+                                                                                    final Integer number_of_lines)
+    {
+
+        CompletableFuture<List<String>> list = CompletableFuture.completedFuture(new ArrayList<String>());
+        if(index >= number_of_lines)
+        {
+            return list;
+        }
+
+        return list. thenCompose(list1 -> {
+            CompletableFuture<String> curr_line = lineStorage.read(index);
+            CompletableFuture<List<String>> list2 = curr_line.thenCompose(line ->
+            {
+                String[] values = line.split(",");
+                String curr_key = create_string_separated_with_comma(values,keysList.size() );
+                Integer compare = key.compareTo(curr_key);
+                if (compare == 0)
+                {
+                    String output = line.substring(key.length());
+                    CompletableFuture<String> outputF = CompletableFuture.completedFuture(output);
+                    CompletableFuture<List<String>> listCompletableFuture = get_lines_with_key_starting_from_index (lineStorage,
+                            key,
+                            keysList,
+                            index+1,
+                            number_of_lines);
+                    return listCompletableFuture.thenCombine(outputF,(l,o)->
+                    {
+                        List<String> listFinished = new ArrayList<>();
+                        listFinished.addAll(l);
+                        listFinished.add(0,o);
+                        return listFinished;
+                    });
+                }
+                return CompletableFuture.completedFuture(new ArrayList<String>());
+
+            });
+
+            return list2;
+        });
+
+
+
+    }
+
+
+
+
+
 
     private String createFileNameFromPermutation(List<String> keyList,
                                                  List<Integer> premutationIndexList)

@@ -33,6 +33,12 @@
     <product-id>android</product-id>
     <amount>5</amount>
   </Order>
+  <Order>
+    <user-id>3</user-id>
+    <order-id>3</order-id>
+    <product-id>android</product-id>
+    <amount>12</amount>
+  </Order>
 
 
 

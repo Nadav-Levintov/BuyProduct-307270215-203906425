@@ -50,11 +50,12 @@ public class BuyProductReaderImplTest {
         CompletableFuture<Boolean> val1 = buyProductReader.isValidOrderId("1");
         CompletableFuture<Boolean> val2 = buyProductReader.isValidOrderId("2");
         CompletableFuture<Boolean> val3 = buyProductReader.isValidOrderId("3");
-
+        CompletableFuture<Boolean> val4 = buyProductReader.isValidOrderId("4");
 
         assertTrue(val1.get());
         assertTrue(val2.get());
-        assertFalse(val3.get());
+        assertTrue(val3.get());
+        assertFalse(val4.get());
     }
 
     @Test
@@ -92,34 +93,30 @@ public class BuyProductReaderImplTest {
         CompletableFuture<?> val1 = buyProductReader.getNumberOfProductOrdered("1");
         CompletableFuture<?> val2 = buyProductReader.getNumberOfProductOrdered("2");
         CompletableFuture<?> val3 = buyProductReader.getNumberOfProductOrdered("3");
-
+        CompletableFuture<?> val4 = buyProductReader.getNumberOfProductOrdered("4");
 
         assertEquals(OptionalInt.of(-10),val1.get());
         assertEquals(OptionalInt.of(5),val2.get());
-        assertEquals(OptionalInt.empty(),val3.get());
+        assertEquals(OptionalInt.of(12),val3.get());
+        assertEquals(OptionalInt.empty(),val4.get());
 
     }
 
     @Test
     public void getHistoryOfOrder_xml() throws Exception {
         BuyProductReader buyProductReader = SetupAndBuildBookScoreReader("small.xml");
+        CompletableFuture<List<Integer>> list = buyProductReader.getHistoryOfOrder("1");
+        assertEquals(3, list.get().size());
+        assertEquals(5, (long)(list.get()).get(0));
+        assertEquals(10, (long)(list.get()).get(1));
+        assertEquals(-1, (long)(list.get()).get(2));
 
-        CompletableFuture<?> val1 = buyProductReader.getHistoryOfOrder("1");
-        CompletableFuture<?> val2 = buyProductReader.getHistoryOfOrder("2");
-        CompletableFuture<?> val3 = buyProductReader.getHistoryOfOrder("3");
-
-        List<Integer> list1 = new ArrayList<>();
-        list1.add(5);
-        list1.add(10);
-        list1.add(-1);
-        List<Integer> list2 = new ArrayList<>();
-        list2.add(5);
-        List<Integer> list3 = new ArrayList<>();
+        list = buyProductReader.getHistoryOfOrder("2");
+        assertEquals(1, list.get().size());
+        assertEquals(5, (long)(list.get()).get(0));
 
 
-        assertEquals(list1,val1.get());
-        assertEquals(list2,val2.get());
-        assertEquals(list3,val3.get());
+
     }
 
     @Test
@@ -133,9 +130,6 @@ public class BuyProductReaderImplTest {
         list1.add("1");
         list1.add("2");
         List<String> list2 = new ArrayList<>();
-
-
-
         assertEquals(list1,val1.get());
         assertEquals(list2,val2.get());
 
@@ -147,12 +141,12 @@ public class BuyProductReaderImplTest {
 
         CompletableFuture<?> val1 = buyProductReader.getTotalAmountSpentByUser("1");
         CompletableFuture<?> val2 = buyProductReader.getTotalAmountSpentByUser("2");
-
-
-
+        CompletableFuture<?> val3 = buyProductReader.getTotalAmountSpentByUser("3");
 
         assertEquals(500L*10L,val1.get());
         assertEquals(0L,val2.get());
+        assertEquals(500L*12L,val3.get());
+
     }
 
     @Test
@@ -165,9 +159,8 @@ public class BuyProductReaderImplTest {
 
         List<String> list1 = new ArrayList<>();
         list1.add("1");
+        list1.add("3");
         List<String> list2 = new ArrayList<>();
-
-
 
         assertEquals(list1,val1.get());
         assertEquals(list2,val2.get());
@@ -185,6 +178,7 @@ public class BuyProductReaderImplTest {
         List<String> list1 = new ArrayList<>();
         list1.add("1");
         list1.add("2");
+        list1.add("3");
         List<String> list2 = new ArrayList<>();
 
 
@@ -202,10 +196,7 @@ public class BuyProductReaderImplTest {
         CompletableFuture<?> val2 = buyProductReader.getTotalNumberOfItemsPurchased("iphone");
         CompletableFuture<?> val3 = buyProductReader.getTotalNumberOfItemsPurchased("benny");
 
-
-
-
-        assertEquals(OptionalLong.of(5),val1.get());
+        assertEquals(OptionalLong.of(17),val1.get());
         assertEquals(OptionalLong.empty(),val2.get());
         assertEquals(OptionalLong.empty(),val3.get());
 
@@ -219,14 +210,12 @@ public class BuyProductReaderImplTest {
         CompletableFuture<?> val2 = buyProductReader.getAverageNumberOfItemsPurchased("iphone");
         CompletableFuture<?> val3 = buyProductReader.getAverageNumberOfItemsPurchased("benny");
 
-
-
-
-        assertEquals(OptionalDouble.of(5),val1.get());
+        assertEquals(OptionalDouble.of(8.5),val1.get());
         assertEquals(OptionalDouble.empty(),val2.get());
         assertEquals(OptionalDouble.empty(),val3.get());
 
     }
+
 
     @Test
     public void getCancelRatioForUser() throws Exception {
@@ -251,12 +240,72 @@ public class BuyProductReaderImplTest {
         assertEquals(OptionalDouble.empty(),val2.get());
     }
 
+
     @Test
     public void getAllItemsPurchased() throws Exception {
+        BuyProductReader buyProductReader = SetupAndBuildBookScoreReader("small.xml");
+        Map<String, Long> allItems1 = buyProductReader.getAllItemsPurchased("1").get();
+        Map<String, Long> allItems2 = buyProductReader.getAllItemsPurchased("2").get();
+        Map<String, Long> allItems3 = buyProductReader.getAllItemsPurchased("3").get();
+
+        assertEquals(1,allItems1.size());
+        assertEquals(0,allItems2.size());
+        assertEquals(1,allItems3.size());
+
+        assertTrue(allItems1.containsKey("android"));
+        assertFalse(allItems2.containsKey("android"));
+        assertTrue(allItems3.containsKey("android"));
+
+        assertEquals((long) 5, (long)allItems1.get("android"));
+        assertEquals((long) 12, (long)allItems3.get("android"));
+
+
+
     }
 
     @Test
     public void getItemsPurchasedByUsers() throws Exception {
+        BuyProductReader buyProductReader = SetupAndBuildBookScoreReader("small.xml");
+        Map<String, Long> allUsers1 = buyProductReader.getItemsPurchasedByUsers("android").get();
+        Map<String, Long> allUsers2 = buyProductReader.getItemsPurchasedByUsers("iphone").get();
+
+        assertEquals(2,allUsers1.size());
+        assertEquals(0,allUsers2.size());
+        assertEquals((long)5, (long)allUsers1.get("1"));
+        assertEquals((long)12, (long)allUsers1.get("3"));
+
+
     }
 
+    @Test
+    public void bigFileTestJson() throws Exception {
+       BuyProductReader buyProductReader = SetupAndBuildBookScoreReader("bigOurs.json");
+
+        CompletableFuture<Boolean> val1 = buyProductReader.isModifiedOrder("gg0t");
+        CompletableFuture<Boolean> val2 = buyProductReader.isCanceledOrder("0b0n");
+        CompletableFuture<List<Integer>> list = buyProductReader.getHistoryOfOrder("3c13");
+        CompletableFuture<Map<String,Long>> val3 = buyProductReader.getAllItemsPurchased("0b0n");
+        assertFalse(val1.get());
+        assertTrue(val2.get());
+        assertEquals( 0, (long) list.get().size()); //Does not has product -> order does not spouse to exist;
+        assertEquals( 0, (long) val3.get().size());//Does not has product -> order does not spouse to exist;
+
+
+
+    }
+
+    @Test
+    public void bigFileTestXml() throws Exception {
+       BuyProductReader buyProductReader = SetupAndBuildBookScoreReader("bigOurs.xml");
+
+        CompletableFuture<Boolean> val1 = buyProductReader.isModifiedOrder("m3a");
+        CompletableFuture<Boolean> val2 = buyProductReader.isCanceledOrder("m3a");
+        CompletableFuture<List<Integer>> list = buyProductReader.getHistoryOfOrder("m3a");
+        assertTrue(val1.get());
+        assertFalse(val2.get());
+        assertEquals( 3, (long) list.get().size());
+        assertEquals( 83, (long) list.get().get(0));
+        assertEquals( 952, (long) list.get().get(1));
+        assertEquals( 591, (long) list.get().get(2));
+    }
 }

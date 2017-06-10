@@ -4,6 +4,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import db_utils.DataBase;
 import db_utils.DataBaseFactory;
+import jdk.nashorn.internal.parser.JSONParser;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -158,7 +159,6 @@ public class BuyProductInitializerImpl implements BuyProductInitializer {
                         case "order":
                             // add to map - (will remove old)
                             String orderId = new String(obj.getString("order-id"));
-
                             csvOrder = obj.getString("order-id") + "," +
                                     obj.getString("user-id") + "," +
                                     obj.getString("product-id") + "," +
@@ -354,6 +354,9 @@ public class BuyProductInitializerImpl implements BuyProductInitializer {
                 tempString += modifiedAmount.toString() + "," + canceled.toString();
                 ordersList.add(tempString);
             }
+        }
+        if(ordersList.contains("3c13,igcg,qa08,436,0,1")){
+            System.out.print("help");
         }
 
         //insert products to list

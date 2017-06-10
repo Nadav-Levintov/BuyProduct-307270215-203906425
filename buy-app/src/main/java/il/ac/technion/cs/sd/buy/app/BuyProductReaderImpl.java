@@ -51,13 +51,15 @@ public class BuyProductReaderImpl implements BuyProductReader {
         return order.get("order");
     }
 
-    private CompletableFuture<Map<String, Long>> get_items_map_from_order_list(CompletableFuture<List<DataBaseElement>> order_line_list) {
+
+    private CompletableFuture<Map<String, Long>> get_items_map_from_order_list(CompletableFuture<List<DataBaseElement>> order_line_list, Integer witchKey) {
         return order_line_list.thenApply(lines ->
                 lines.stream()
                         .map(order -> {
 
                             String order_id = getOrderId(order);
                             String product_id = getProduct(order);
+                            String user_id = order.get("user");
                             CompletableFuture<Long> curr_amount = CompletableFuture.completedFuture(getAmount(order).longValue());
                             Boolean is_moded = isModified(order);
                             Boolean is_canceled = isCanceled(order);
@@ -69,10 +71,21 @@ public class BuyProductReaderImpl implements BuyProductReader {
                                     CompletableFuture<List<DataBaseElement>> moded_line_list = modified_ordersDB.get_lines_for_single_key(order_id,"order");
 
                                     curr_amount = moded_line_list.thenApply(mod_list -> getAmount(mod_list.get(mod_list.size() - 1)).longValue());
-
                                 }
+                            }else
+                            {
+                                curr_amount = CompletableFuture.completedFuture((long )0);
                             }
-                            return new Pair<>(CompletableFuture.completedFuture(product_id), curr_amount);
+
+                            if(witchKey==1)
+                            {
+                                return new Pair<>(CompletableFuture.completedFuture(product_id), curr_amount);
+                            }
+                            else
+                            {
+                                return new Pair<>(CompletableFuture.completedFuture(user_id), curr_amount);
+                            }
+
                         })
                         .collect(Collectors.toList())).thenCompose(list ->
         {
@@ -107,7 +120,6 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
         });
     }
-
 
     /* public Methods */
 
@@ -410,7 +422,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
         return numberOfItemsPurchased.thenCombine(order_list, (purchased_amount,list) -> {
             Integer orders_num =0;
             for (DataBaseElement aList : list) {
-                if (isCanceled(aList))
+                if (!isCanceled(aList))
                     orders_num++;
             }
             if(orders_num == 0)
@@ -481,7 +493,7 @@ public class BuyProductReaderImpl implements BuyProductReader {
     public CompletableFuture<Map<String, Long>> getAllItemsPurchased(String userId) {
 
         CompletableFuture<List<DataBaseElement>> order_line_list = ordersDB.get_lines_for_single_key(userId,"user");
-        return get_items_map_from_order_list(order_line_list);
+        return get_items_map_from_order_list(order_line_list,1);
     }
 
     @Override
@@ -489,6 +501,6 @@ public class BuyProductReaderImpl implements BuyProductReader {
 
         CompletableFuture<List<DataBaseElement>> order_line_list = ordersDB.get_lines_for_single_key(productId, "product");
 
-        return get_items_map_from_order_list(order_line_list);
+        return get_items_map_from_order_list(order_line_list, 0);
     }
 }
