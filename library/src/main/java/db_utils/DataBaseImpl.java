@@ -441,10 +441,10 @@ public class DataBaseImpl implements DataBase {
         return OptionalInt.of(index);
     }
 
-    public CompletableFuture<List<DataBaseElement>> get_lines_for_single_key(String key, String column)
+    public CompletableFuture<List<DataBaseElement>> get_lines_for_single_key(String key, String keyName)
     {
         List<String> names_of_keys = new ArrayList<>();
-        names_of_keys.add(column);
+        names_of_keys.add(keyName);
         List<String> keys = new ArrayList<>();
         keys.add(key);
 
