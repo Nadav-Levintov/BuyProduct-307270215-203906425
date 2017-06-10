@@ -5,7 +5,7 @@ package db_utils;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
-/*
+/**
 * Class: DataBase
 * ---------------
 *  Explanation:
@@ -50,7 +50,7 @@ import java.util.concurrent.CompletableFuture;
 
 public interface DataBase {
 
-/* Method: build_db
+/** Method: build_db
 *   Input: List of strings when every value in table is separated with semicolon (",")
 *      example of a string: "order123,Benny,BMW,1,250000"
 *
@@ -63,7 +63,7 @@ public interface DataBase {
 
     CompletableFuture<Void> build_db(List<String> dataList);
 
-/* Method: get_lines_for_keys
+/** Method: get_lines_for_keys
 *       Input:
 *           keysList     - list of keys
 *                           - must be in same length as keysNameList
@@ -86,7 +86,7 @@ public interface DataBase {
 
     CompletableFuture<List<DataBaseElement>> get_lines_for_keys(List<String> keysList, List<String> keysNameList);
 
-/* Method: get_lines_for_single_key
+/** Method: get_lines_for_single_key
 *       Input:
 *           key             - key
 *
@@ -108,7 +108,7 @@ public interface DataBase {
 * */
 
     CompletableFuture<List<DataBaseElement>> get_lines_for_single_key(String key, String keyName);
-/* Method: get_val_from_column_by_name
+/** Method: get_val_from_column_by_name
 *       Input:
 *           keys - the order of key must be in this case as the original order and the same amount
 *              (original == the order when the data base was created)
@@ -124,7 +124,7 @@ public interface DataBase {
 * */
     CompletableFuture<Optional<String>> get_val_from_column_by_name(List<String> keys, String column);
 
-/* Method: get_val_from_column_by_column_number
+/** Method: get_val_from_column_by_column_number
 *       Very similar to get_val_from_column_by_name (using column number instead it's name)
 *       Input:
 *           keys - the order of key must be in this case as the original order and the same amount
@@ -143,7 +143,7 @@ public interface DataBase {
 
     CompletableFuture<Optional<String>> get_val_from_column_by_column_number(List<String> keys, Integer column);
 
-/* Method: getNum_of_columns
+/** Method: getNum_of_columns
 *      Output:
 *           number of columns defined in data base
 *
@@ -153,7 +153,7 @@ public interface DataBase {
 * */
     Integer getNum_of_columns();
 
-/* Method: getNames_of_columns
+/** Method: getNames_of_columns
 *      Output:
 *           List of the columns names as defined
 *
@@ -164,7 +164,7 @@ public interface DataBase {
 
     List<String> getNames_of_columns();
 
-/* Method: getNum_of_keys
+/** Method: getNum_of_keys
 *      Output:
 *           number of keys defined in data base
 *
@@ -175,7 +175,7 @@ public interface DataBase {
 
     Integer getNum_of_keys();
 
-/* Method: get_num_of_column
+/** Method: get_num_of_column
 *      Input:
 *           column's name
 *      Output:
@@ -190,7 +190,7 @@ public interface DataBase {
 * */
     OptionalInt get_num_of_column(String col_name);
 
-/* Method: getDb_name
+/** Method: getDb_name
 *      Output:
 *           data base name as given in initialization
 *
@@ -201,7 +201,7 @@ public interface DataBase {
 
     String getDb_name();
 
-/* Method: is_multiples_allowed
+/** Method: is_multiples_allowed
 *      Output:
 *           true - case allowed
 *           false - case not allowed
